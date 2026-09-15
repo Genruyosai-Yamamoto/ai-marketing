@@ -45,6 +45,7 @@ ANALYSIS = {
 @pytest.fixture
 def og(monkeypatch):
     monkeypatch.setenv("GROQ_API_KEY", "test-key")
+    monkeypatch.delenv("GROQ_MODEL", raising=False)
     import agent.opportunity_generator as module
     return module
 
