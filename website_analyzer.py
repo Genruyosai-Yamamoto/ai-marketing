@@ -375,6 +375,7 @@ def analyze_html(html):
     return {
         "title": title,
         "description": description,
+        "meta_description": description,
         "headings": headings[:50],
         "links": links[:100],
     }
