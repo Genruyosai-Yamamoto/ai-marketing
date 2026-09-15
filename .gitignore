@@ -1,0 +1,48 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.db
+
+# Virtual Environment
+venv/
+env/
+ENV/
+VENV/
+
+# --- Flask / Web App ---
+instance/
+*.sqlite3
+*.sqlite
+*.sqlite3-journal
+
+# --- Config & Secrets ---
+.env
+*.pem
+*.key
+*.cert
+
+# --- OS Junk ---
+.DS_Store
+Thumbs.db
+
+# --- VS Code ---
+.vscode/
+
+# --- Logs ---
+*.log
+
+# --- Build/Distribution ---
+build/
+dist/
+*.spec
+test.py
+# --- Python Metadata ---
+*.egg-info/
+
+church-54be3-firebase-adminsdk-fbsvc-*.json
+
+# Firebase service-account keys — never commit
+ai-agent-*-firebase-adminsdk-*.json
