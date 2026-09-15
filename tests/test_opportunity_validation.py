@@ -63,9 +63,21 @@ def test_bad_potential_impact_raises():
         v.validate_opportunity_item(_valid_item(potential_impact="critical"))
 
 
+@pytest.mark.parametrize("bad", [{}, [], ["high"]])
+def test_unhashable_potential_impact_raises(bad):
+    with pytest.raises(ValueError, match="potential_impact"):
+        v.validate_opportunity_item(_valid_item(potential_impact=bad))
+
+
 def test_bad_type_raises():
     with pytest.raises(ValueError, match=r"type 'ads' not in"):
         v.validate_opportunity_item(_valid_item(type="ads"))
+
+
+@pytest.mark.parametrize("bad", [{}, [], ["website"]])
+def test_unhashable_type_raises(bad):
+    with pytest.raises(ValueError, match="type"):
+        v.validate_opportunity_item(_valid_item(type=bad))
 
 
 @pytest.mark.parametrize("bad", ["0.5", True, None])
@@ -93,6 +105,16 @@ def test_out_of_order_raises():
     ]
     with pytest.raises(ValueError, match="opportunities out of order at index 1"):
         v.validate_opportunities(items)
+
+
+# Ordering is non-increasing, not strictly decreasing: identical (impact,
+# confidence) pairs are allowed in any quantity and must pass validation.
+def test_ties_are_permitted():
+    items = [
+        _valid_item(potential_impact="high", confidence=0.9),
+        _valid_item(potential_impact="high", confidence=0.9),
+    ]
+    assert v.validate_opportunities(items) == items
 
 
 def test_extra_keys_tolerated():

@@ -36,13 +36,13 @@ def validate_opportunity_item(item, index=0):
             raise ValueError(f"{prefix}: 'evidence' must be a non-empty list of strings")
 
     impact = item.get("potential_impact")
-    if impact not in _IMPACT_RANKS:
+    if not isinstance(impact, str) or impact not in _IMPACT_RANKS:
         raise ValueError(
             f"{prefix}: potential_impact {impact!r} not in {sorted(_IMPACT_RANKS)}"
         )
 
     otype = item.get("type")
-    if otype not in _ALLOWED_TYPES:
+    if not isinstance(otype, str) or otype not in _ALLOWED_TYPES:
         raise ValueError(f"{prefix}: type {otype!r} not in {sorted(_ALLOWED_TYPES)}")
 
     confidence = item.get("confidence")
