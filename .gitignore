@@ -39,6 +39,9 @@ build/
 dist/
 *.spec
 test.py
+
+# --- Redis ---
+*.rdb
 # --- Python Metadata ---
 *.egg-info/
 
