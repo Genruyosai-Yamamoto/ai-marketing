@@ -10,6 +10,7 @@ from flask import Flask, request,render_template
 from routes.auth import auth_bp
 from routes.user import user_bp
 from routes.auth_api import api_auth_bp
+from routes.business_api import business_api_bp
 # from routes.payment import payment_bp
 from datetime import timedelta
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -42,6 +43,7 @@ app.config.update(
 app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(api_auth_bp)
+app.register_blueprint(business_api_bp)
 # app.register_blueprint(payment_bp)
 
 
