@@ -134,6 +134,8 @@ async function handleLogout() {
   } catch (err) {
     // Even if the request fails, clear the client state and return to login.
   }
+  stopPolling();
+  state.businessId = null;
   state.user = null;
   wasAuthed = false;
   setNavForAuth(false);
@@ -166,6 +168,8 @@ document.addEventListener("session-expired", () => {
   if (wasAuthed) {
     showToast("Your session has expired. Please log in again.");
   }
+  stopPolling();
+  state.businessId = null;
   state.user = null;
   wasAuthed = false;
   setNavForAuth(false);
@@ -572,9 +576,10 @@ async function openBusinessDetail(businessId) {
     $("biz-name").textContent = currentBusiness.name || "Untitled business";
     $("biz-industry").textContent = currentBusiness.industry || "";
     const link = $("biz-website");
-    if (currentBusiness.website_url) {
-      link.href = currentBusiness.website_url;
-      link.textContent = currentBusiness.website_url;
+    const websiteUrl = currentBusiness.website_url || "";
+    if (/^https?:\/\//i.test(websiteUrl)) {
+      link.href = websiteUrl;
+      link.textContent = websiteUrl;
     } else {
       link.removeAttribute("href");
       link.textContent = "";
