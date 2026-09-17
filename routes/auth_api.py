@@ -124,3 +124,47 @@ def api_login():
     except Exception as exc:
         current_app.logger.error(f"API login error: {exc}")
         return jsonify({"success": False, "error": "Internal server error."}), 500
+
+
+@api_auth_bp.route("/api/auth/logout", methods=["POST"])
+def api_logout():
+    try:
+        user_id = session.get("user_id")
+        if user_id:
+            try:
+                db.collection("users").document(user_id).update({"active_session_token": None})
+            except Exception as exc:
+                current_app.logger.error(f"Logout Firestore error: {exc}")
+        session.clear()
+        return jsonify({"success": True, "message": "Logged out."}), 200
+    except Exception as exc:
+        current_app.logger.error(f"API logout error: {exc}")
+        return jsonify({"success": False, "error": "Internal server error."}), 500
+
+
+@api_auth_bp.route("/api/auth/me", methods=["GET"])
+def api_me():
+    try:
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"success": False, "error": "Authentication required"}), 401
+
+        user_doc = db.collection("users").document(user_id).get()
+        if not user_doc.exists:
+            session.clear()
+            return jsonify({"success": False, "error": "Authentication required"}), 401
+
+        user = user_doc.to_dict()
+        return jsonify({
+            "success": True,
+            "user": {
+                "id": user_doc.id,
+                "username": user.get("username"),
+                "email": user.get("email"),
+                "role": user.get("role"),
+                "status": user.get("status"),
+            },
+        }), 200
+    except Exception as exc:
+        current_app.logger.error(f"API me error: {exc}")
+        return jsonify({"success": False, "error": "Internal server error."}), 500

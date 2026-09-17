@@ -328,3 +328,62 @@ def test_login_ip_locked_out_returns_423(fake_firebase, client):
     resp = post_json(client, "/api/auth/login", body, "9.9.9.9")
     assert resp.status_code == 423
     assert "Too many failed attempts. Try again in" in resp.get_json()["error"]
+
+
+def test_api_auth_blueprint_registered(flask_app):
+    rules = {r.rule for r in flask_app.url_map.iter_rules()}
+    for rule in ("/api/auth/register", "/api/auth/login", "/api/auth/logout", "/api/auth/me"):
+        assert rule in rules
+
+
+def test_logout_clears_session_and_wipes_token(fake_firebase, client):
+    db, routes_auth, auth_api = fake_firebase
+    seed_users(db, {"u1": {
+        "username": "Alice", "email": "alice@example.com", "role": "user", "status": "Active",
+        "password_hash": generate_password_hash("password123"),
+        "active_session_token": "old-token",
+    }})
+    with client.session_transaction() as sess:
+        sess["user_id"] = "u1"
+
+    resp = client.post("/api/auth/logout")
+    assert resp.status_code == 200
+    assert resp.get_json() == {"success": True, "message": "Logged out."}
+
+    assert db.collection("users").document("u1").data["active_session_token"] is None
+    with client.session_transaction() as sess:
+        assert "user_id" not in sess
+
+
+def test_me_returns_logged_in_user(fake_firebase, client):
+    db, routes_auth, auth_api = fake_firebase
+    seed_users(db, {"u1": {
+        "username": "Alice", "email": "alice@example.com", "role": "user", "status": "Active",
+    }})
+    with client.session_transaction() as sess:
+        sess["user_id"] = "u1"
+
+    resp = client.get("/api/auth/me")
+    assert resp.status_code == 200
+    assert resp.get_json() == {
+        "success": True,
+        "user": {"id": "u1", "username": "Alice", "email": "alice@example.com", "role": "user", "status": "Active"},
+    }
+
+
+def test_me_requires_auth(client):
+    resp = client.get("/api/auth/me")
+    assert resp.status_code == 401
+    assert resp.get_json() == {"success": False, "error": "Authentication required"}
+
+
+def test_me_unknown_user_clears_session(fake_firebase, client):
+    db, routes_auth, auth_api = fake_firebase
+    with client.session_transaction() as sess:
+        sess["user_id"] = "ghost"
+
+    resp = client.get("/api/auth/me")
+    assert resp.status_code == 401
+    assert resp.get_json() == {"success": False, "error": "Authentication required"}
+    with client.session_transaction() as sess:
+        assert "user_id" not in sess
