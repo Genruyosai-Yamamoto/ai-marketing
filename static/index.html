@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>blom</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: { sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"] },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="/static/js/api.js" defer></script>
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body class="h-full bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 font-sans antialiased">
+  <div id="toast-container" class="fixed top-4 right-4 z-[60] space-y-2 w-80 max-w-[90vw]"></div>
+
+  <nav class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      <div id="nav-brand" class="text-lg font-bold tracking-tight text-indigo-600 dark:text-indigo-400">
+        blom
+      </div>
+      <div id="nav-auth" class="hidden items-center gap-3">
+        <button id="theme-toggle" class="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white" type="button">
+          Toggle theme
+        </button>
+        <button id="logout-btn" class="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white" type="button">
+          Log out
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── LOGIN ───────────────────────────────────────────── -->
+  <section id="view-login" data-view="login" class="hidden max-w-md mx-auto px-4 py-16">
+    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-8">
+      <h1 class="text-2xl font-bold mb-6">Sign in</h1>
+      <div id="login-error" class="hidden mb-4 text-sm text-red-700 dark:text-red-400"></div>
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label for="login-email" class="block text-sm font-medium mb-1">Email</label>
+          <input id="login-email" type="email" required
+                 class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="login-password" class="block text-sm font-medium mb-1">Password</label>
+          <input id="login-password" type="password" required
+                 class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <button id="login-submit" type="submit"
+                class="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 disabled:opacity-60">
+          Sign in
+        </button>
+      </form>
+      <p class="mt-6 text-sm text-gray-600 dark:text-gray-400">
+        No account?
+        <button id="login-btn-register" type="button" class="text-indigo-600 dark:text-indigo-400 font-medium">Create one</button>
+      </p>
+    </div>
+  </section>
+
+  <!-- ── REGISTER ────────────────────────────────────────── -->
+  <section id="view-register" data-view="register" class="hidden max-w-md mx-auto px-4 py-16">
+    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-8">
+      <h1 class="text-2xl font-bold mb-6">Create your account</h1>
+      <div id="register-error" class="hidden mb-4 text-sm text-red-700 dark:text-red-400"></div>
+      <form id="register-form" class="space-y-4">
+        <div>
+          <label for="register-username" class="block text-sm font-medium mb-1">Username</label>
+          <input id="register-username" type="text" required autocomplete="username"
+                 class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="register-email" class="block text-sm font-medium mb-1">Email</label>
+          <input id="register-email" type="email" required autocomplete="email"
+                 class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="register-password" class="block text-sm font-medium mb-1">Password</label>
+          <input id="register-password" type="password" required autocomplete="new-password"
+                 class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="register-confirm" class="block text-sm font-medium mb-1">Confirm password</label>
+          <input id="register-confirm" type="password" required autocomplete="new-password"
+                 class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <button id="register-submit" type="submit"
+                class="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 disabled:opacity-60">
+          Create account
+        </button>
+      </form>
+      <p class="mt-6 text-sm text-gray-600 dark:text-gray-400">
+        Already have an account?
+        <button id="register-btn-login" type="button" class="text-indigo-600 dark:text-indigo-400 font-medium">Sign in</button>
+      </p>
+    </div>
+  </section>
+
+  <!-- ── DASHBOARD ───────────────────────────────────────── -->
+  <section id="view-dashboard" data-view="dashboard" class="hidden max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold">Your businesses</h1>
+      <button id="create-business-btn"
+              class="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5">
+        New business
+      </button>
+    </div>
+    <div id="business-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <div id="dashboard-empty" class="hidden text-center py-24 text-gray-500 dark:text-gray-400">
+      <p class="text-lg font-medium">No businesses yet</p>
+      <p class="mt-1 text-sm">Create your first business to get started.</p>
+    </div>
+  </section>
+
+  <!-- ── BUSINESS DETAIL ─────────────────────────────────── -->
+  <section id="view-business" data-view="business" class="hidden max-w-4xl mx-auto px-4 sm:px-6 py-8">
+    <button id="back-to-dashboard" class="text-sm text-indigo-600 dark:text-indigo-400 mb-4">← Back to dashboard</button>
+
+    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 mb-6">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 id="biz-name" class="text-2xl font-bold"></h1>
+          <p id="biz-industry" class="text-sm text-gray-500 dark:text-gray-400 mt-1"></p>
+          <a id="biz-website" target="_blank" rel="noopener noreferrer"
+             class="text-sm text-indigo-600 dark:text-indigo-400 mt-1 inline-block"></a>
+          <p id="biz-description" class="text-sm text-gray-600 dark:text-gray-300 mt-2"></p>
+        </div>
+        <div class="flex gap-2">
+          <button id="biz-edit-btn" type="button"
+                  class="rounded-lg border border-gray-300 dark:border-gray-700 text-sm px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800">Edit</button>
+          <button id="biz-delete-btn" type="button"
+                  class="rounded-lg border border-red-300 dark:border-red-800 text-sm px-3 py-2 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950">Delete</button>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
+        <button id="analyze-btn"
+                class="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 disabled:opacity-60">
+          Analyze website
+        </button>
+        <div id="run-status" class="mt-3"></div>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 mb-6">
+      <h2 class="text-lg font-semibold mb-4">Opportunities</h2>
+      <div id="opportunities-list" class="space-y-3"></div>
+      <div id="opportunities-empty" class="hidden text-sm text-gray-500 dark:text-gray-400">
+        Run an analysis to find opportunities.
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+      <h2 class="text-lg font-semibold mb-4">Actions</h2>
+      <div id="actions-list" class="space-y-3"></div>
+      <div id="actions-empty" class="hidden text-sm text-gray-500 dark:text-gray-400">No actions yet.</div>
+    </div>
+  </section>
+
+  <!-- ── BUSINESS FORM MODAL ─────────────────────────────── -->
+  <div id="business-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/40" data-close="business-modal"></div>
+    <div class="relative bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 w-full max-w-lg mx-4">
+      <h2 id="business-modal-title" class="text-lg font-semibold mb-4">New business</h2>
+      <div id="business-form-error" class="hidden mb-3 text-sm text-red-700 dark:text-red-400"></div>
+      <form id="business-form" class="space-y-4">
+        <input id="business-id" type="hidden" />
+        <div>
+          <label for="business-field-name" class="block text-sm font-medium mb-1">Name</label>
+          <input id="business-field-name" type="text" required
+                 class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="business-field-website" class="block text-sm font-medium mb-1">Website URL</label>
+          <input id="business-field-website" type="url"
+                 class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="business-field-industry" class="block text-sm font-medium mb-1">Industry</label>
+          <input id="business-field-industry" type="text"
+                 class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="business-field-description" class="block text-sm font-medium mb-1">Description</label>
+          <textarea id="business-field-description" rows="3"
+                    class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" data-close="business-modal"
+                  class="rounded-lg border border-gray-300 dark:border-gray-700 text-sm px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
+          <button id="business-submit" type="submit"
+                  class="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 disabled:opacity-60">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── DELETE CONFIRM MODAL ────────────────────────────── -->
+  <div id="delete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/40" data-close="delete-modal"></div>
+    <div class="relative bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 w-full max-w-md mx-4">
+      <h2 class="text-lg font-semibold mb-2">Delete business?</h2>
+      <p class="text-sm text-gray-600 dark:text-gray-300 mb-5">
+        <span id="delete-biz-name"></span> and all of its data will be permanently removed.
+      </p>
+      <div class="flex justify-end gap-2">
+        <button type="button" data-close="delete-modal"
+                class="rounded-lg border border-gray-300 dark:border-gray-700 text-sm px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
+        <button id="delete-confirm"
+                class="rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 disabled:opacity-60">Delete</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

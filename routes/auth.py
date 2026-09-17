@@ -204,7 +204,7 @@ def log_suspicious_device(device_id: str, user_id: str, ip: str) -> None:
 
 @auth_bp.route("/")
 def home():
-    return render_template("home.html")
+    return current_app.send_static_file("index.html")
 
 
 # ══════════════════════════════════════════════
