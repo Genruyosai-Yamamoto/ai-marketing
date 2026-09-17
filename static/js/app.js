@@ -192,8 +192,6 @@ function toggleTheme() {
 initTheme();
 $("theme-toggle").addEventListener("click", toggleTheme);
 
-bootstrap();
-
 // ── Dashboard ──────────────────────────────────────────────
 
 let editingBusinessId = null;
@@ -362,9 +360,270 @@ for (const el of document.querySelectorAll("[data-close]")) {
   el.addEventListener("click", () => closeModal(el.dataset.close));
 }
 
-// Dashboard load on page refresh while already signed in:
-window.addEventListener("load", () => {
-  if ($("view-dashboard").classList.contains("hidden") === false) {
-    loadBusinesses();
+// ── Business detail ─────────────────────────────────────────
+
+let runPollTimer = null;
+let currentBusiness = null;
+
+function renderRunStatus(status, error) {
+  const el = $("run-status");
+  el.innerHTML = "";
+  const pill = document.createElement("span");
+  const label = status || "queued";
+  const map = {
+    "queued": "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300",
+    "running": "bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300",
+    "completed": "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300",
+    "failed": "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300",
+  };
+  pill.className = "inline-block text-sm font-medium rounded-full px-3 py-1 " + (map[label] || map.queued);
+  pill.textContent = label;
+  el.appendChild(pill);
+  if (error) {
+    const msg = document.createElement("p");
+    msg.className = "mt-2 text-sm text-red-700 dark:text-red-400";
+    msg.textContent = error;
+    el.appendChild(msg);
   }
+}
+
+function renderOpportunities(list) {
+  const container = $("opportunities-list");
+  const empty = $("opportunities-empty");
+  container.innerHTML = "";
+  if (!list.length) {
+    empty.classList.remove("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+  for (const opp of list) {
+    const box = document.createElement("div");
+    box.className = "rounded-lg border border-gray-200 dark:border-gray-800 p-4";
+    const title = document.createElement("h3");
+    title.className = "font-semibold";
+    title.textContent = opp.title || opp.headline || "Opportunity";
+    const summary = document.createElement("p");
+    summary.className = "text-sm text-gray-600 dark:text-gray-300 mt-1";
+    summary.textContent = opp.summary || opp.description || "";
+    box.appendChild(title);
+    if (summary.textContent) box.appendChild(summary);
+    container.appendChild(box);
+  }
+}
+
+async function loadOpportunities() {
+  const body = await apiFetch("/api/business/" + state.businessId + "/opportunities");
+  renderOpportunities(body.opportunities || []);
+}
+
+function renderActions(list) {
+  const container = $("actions-list");
+  const empty = $("actions-empty");
+  container.innerHTML = "";
+  if (!list.length) {
+    empty.classList.remove("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+  for (const action of list) {
+    const row = document.createElement("div");
+    row.className = "rounded-lg border border-gray-200 dark:border-gray-800 p-4";
+
+    const head = document.createElement("div");
+    head.className = "flex flex-wrap items-center justify-between gap-2";
+
+    const title = document.createElement("h3");
+    title.className = "font-semibold";
+    title.textContent = action.title || "Action";
+
+    const pill = document.createElement("span");
+    const statusMap = {
+      "pending_approval": "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300",
+      "approved": "bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300",
+      "rejected": "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
+      "executed": "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300",
+    };
+    pill.className = "text-xs font-medium rounded-full px-2 py-0.5 " + (statusMap[action.status] || "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300");
+    pill.textContent = action.status || "unknown";
+
+    head.appendChild(title);
+    head.appendChild(pill);
+
+    const desc = document.createElement("p");
+    if (action.description) {
+      desc.className = "text-sm text-gray-600 dark:text-gray-300 mt-1";
+      desc.textContent = action.description;
+    }
+
+    const buttons = document.createElement("div");
+    buttons.className = "flex gap-2 mt-3";
+    if (action.status === "pending_approval") {
+      const approve = document.createElement("button");
+      approve.type = "button";
+      approve.className = "rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 disabled:opacity-60";
+      approve.textContent = "Approve";
+      approve.addEventListener("click", () => approveAction(action.id));
+
+      const reject = document.createElement("button");
+      reject.type = "button";
+      reject.className = "rounded-lg border border-gray-300 dark:border-gray-700 text-xs px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-60";
+      reject.textContent = "Reject";
+      reject.addEventListener("click", () => rejectAction(action.id));
+
+      buttons.appendChild(approve);
+      buttons.appendChild(reject);
+    }
+
+    row.appendChild(head);
+    if (action.description) row.appendChild(desc);
+    if (buttons.children.length) row.appendChild(buttons);
+    container.appendChild(row);
+  }
+}
+
+async function loadActions() {
+  const body = await apiFetch("/api/business/" + state.businessId + "/actions");
+  renderActions(body.actions || []);
+}
+
+async function approveAction(actionId) {
+  await apiFetch("/api/business/" + state.businessId + "/actions/" + actionId + "/approve", {
+    method: "POST",
+  });
+  showToast("Action approved.", "success");
+  await loadActions();
+}
+
+async function rejectAction(actionId) {
+  await apiFetch("/api/business/" + state.businessId + "/actions/" + actionId + "/reject", {
+    method: "POST",
+  });
+  showToast("Action rejected.", "success");
+  await loadActions();
+}
+
+async function startAnalysis() {
+  const btn = $("analyze-btn");
+  btn.disabled = true;
+  btn.textContent = "Analyzing…";
+  try {
+    await apiFetch("/api/business/" + state.businessId + "/analyze", {
+      method: "POST",
+    });
+    showToast("Analysis started.", "success");
+    pollRunStatus(true);
+  } catch (err) {
+    showToast(err.message || "Unable to start analysis.");
+    btn.disabled = false;
+    btn.textContent = "Analyze website";
+  }
+}
+
+async function pollRunStatus(immediate) {
+  if (!state.businessId) return;
+  const run = async () => {
+    try {
+      const body = await apiFetch("/api/business/" + state.businessId + "/runs/latest");
+      const run = body.run;
+      if (!run) {
+        renderRunStatus("queued", null);
+        return;
+      }
+      const status = run.status;
+      renderRunStatus(status, run.error);
+      if (status === "completed" || status === "failed") {
+        stopPolling();
+        $("analyze-btn").disabled = false;
+        $("analyze-btn").textContent = "Analyze website";
+        if (status === "completed") {
+          try {
+            await loadOpportunities();
+            await loadActions();
+          } catch (err) {
+            showToast(err.message || "Could not refresh results.");
+          }
+        }
+        return;
+      }
+    } catch (err) {
+      renderRunStatus("running", null);
+    }
+  };
+  if (immediate) {
+    await run();
+  }
+  if (runPollTimer) clearInterval(runPollTimer);
+  runPollTimer = setInterval(run, 3000);
+}
+
+function stopPolling() {
+  if (runPollTimer) {
+    clearInterval(runPollTimer);
+    runPollTimer = null;
+  }
+}
+
+async function openBusinessDetail(businessId) {
+  stopPolling();
+  state.businessId = businessId;
+  try {
+    const body = await apiFetch("/api/business/" + businessId);
+    currentBusiness = body.business;
+    $("biz-name").textContent = currentBusiness.name || "Untitled business";
+    $("biz-industry").textContent = currentBusiness.industry || "";
+    const link = $("biz-website");
+    if (currentBusiness.website_url) {
+      link.href = currentBusiness.website_url;
+      link.textContent = currentBusiness.website_url;
+    } else {
+      link.removeAttribute("href");
+      link.textContent = "";
+    }
+    $("biz-description").textContent = currentBusiness.description || "";
+    $("analyze-btn").disabled = false;
+    $("analyze-btn").textContent = "Analyze website";
+    showView("business");
+    renderRunStatus("queued", null);
+    await loadOpportunities();
+    await loadActions();
+    pollRunStatus(true);
+  } catch (err) {
+    showToast(err.message || "Unable to load business.");
+    if (err.status === 404 || err.status === 403) {
+      showView("dashboard");
+      try {
+        await loadBusinesses();
+      } catch (loadErr) {
+        showToast(loadErr.message || "Unable to load businesses.");
+      }
+    }
+  }
+}
+
+$("back-to-dashboard").addEventListener("click", () => {
+  stopPolling();
+  state.businessId = null;
+  showView("dashboard");
+  loadBusinesses().catch((err) => showToast(err.message || "Unable to load businesses."));
 });
+
+$("analyze-btn").addEventListener("click", startAnalysis);
+$("biz-edit-btn").addEventListener("click", () => openBusinessModal(currentBusiness));
+$("biz-delete-btn").addEventListener("click", () => {
+  openDeleteModal(currentBusiness.id, currentBusiness.name);
+});
+
+// Dashboard cards → detail (also used by Task 4's renderBusinessCards).
+// Successfully restructured login wiring for clean dashboard load:
+const _origBootstrap = bootstrap;
+bootstrap = async function () {
+  await _origBootstrap();
+  if (state.user) {
+    try {
+      await loadBusinesses();
+    } catch (err) {
+      showToast(err.message || "Unable to load businesses.");
+    }
+  }
+};
+bootstrap();
