@@ -241,3 +241,90 @@ def test_register_500_on_unexpected_error(fake_firebase, client, monkeypatch):
 
     assert resp.status_code == 500
     assert resp.get_json()["success"] is False
+
+
+def test_login_success_sets_session(fake_firebase, client):
+    db, routes_auth, auth_api = fake_firebase
+    seed_users(db, {
+        "u1": {
+            "username": "Alice", "email": "alice@example.com", "role": "user", "status": "Active",
+            "password_hash": generate_password_hash("password123"),
+        },
+    })
+
+    resp = post_json(client, "/api/auth/login", {
+        "email": "alice@example.com", "password": "password123",
+    }, "5.6.7.8")
+
+    assert resp.status_code == 200
+    assert resp.get_json() == {
+        "success": True, "user_id": "u1", "email": "alice@example.com", "role": "user",
+    }
+
+    with client.session_transaction() as sess:
+        assert sess["user_id"] == "u1"
+        assert sess["email"] == "alice@example.com"
+        assert sess["role"] == "user"
+        token = sess["session_token"]
+    assert len(token) == 128
+    assert db.collection("users").document("u1").data["active_session_token"] == token
+
+
+def test_login_wrong_password_increments_attempts(fake_firebase, client):
+    db, routes_auth, auth_api = fake_firebase
+    seed_users(db, {"u1": {
+        "email": "alice@example.com", "status": "Active",
+        "password_hash": generate_password_hash("password123"),
+    }})
+
+    resp = post_json(client, "/api/auth/login", {
+        "email": "alice@example.com", "password": "wrongpass",
+    }, "5.6.7.9")
+
+    assert resp.status_code == 401
+    assert resp.get_json()["error"] == "Invalid credentials."
+    assert routes_auth.login_attempts.get("5.6.7.9", 0) == 1
+
+
+def test_login_unknown_email_returns_401(fake_firebase, client):
+    db, routes_auth, auth_api = fake_firebase
+
+    resp = post_json(client, "/api/auth/login", {
+        "email": "nobody@example.com", "password": "password123",
+    }, "5.6.7.10")
+
+    assert resp.status_code == 401
+    assert resp.get_json()["error"] == "Invalid credentials."
+    assert routes_auth.login_attempts.get("5.6.7.10", 0) == 1
+
+
+def test_login_disabled_user_returns_403(fake_firebase, client):
+    db, routes_auth, auth_api = fake_firebase
+    seed_users(db, {"u2": {
+        "email": "bob@example.com", "status": "Disabled",
+        "password_hash": generate_password_hash("password123"),
+    }})
+
+    resp = post_json(client, "/api/auth/login", {
+        "email": "bob@example.com", "password": "password123",
+    }, "5.6.7.11")
+
+    assert resp.status_code == 403
+    assert resp.get_json()["error"] == "Account disabled. Contact support."
+
+
+def test_login_ip_locked_out_returns_423(fake_firebase, client):
+    db, routes_auth, auth_api = fake_firebase
+    seed_users(db, {"u1": {
+        "email": "alice@example.com", "status": "Active",
+        "password_hash": generate_password_hash("password123"),
+    }})
+
+    body = {"email": "alice@example.com", "password": "wrongpass"}
+    for _ in range(5):
+        resp = post_json(client, "/api/auth/login", body, "9.9.9.9")
+        assert resp.status_code == 401
+
+    resp = post_json(client, "/api/auth/login", body, "9.9.9.9")
+    assert resp.status_code == 423
+    assert "Too many failed attempts. Try again in" in resp.get_json()["error"]
