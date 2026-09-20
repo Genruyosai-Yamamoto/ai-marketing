@@ -21,6 +21,7 @@ def generate_learning_from_measurement(measurement):
     if metric == "execution_success":
         if value == 1:
             return {
+                "learning_type": "operational",
                 "observation": (
                     "The approved action completed successfully."
                 ),
@@ -32,6 +33,7 @@ def generate_learning_from_measurement(measurement):
             }
 
         return {
+            "learning_type": "operational",
             "observation": (
                 "The approved action did not complete successfully."
             ),
@@ -43,6 +45,7 @@ def generate_learning_from_measurement(measurement):
         }
 
     return {
+        "learning_type": "marketing",
         "observation": (
             f"The metric '{metric}' was recorded with a value of {value}."
         ),

@@ -4,6 +4,7 @@ import os
 from groq import Groq
 
 from agent.prompts import DECISION_ENGINE_SYSTEM_PROMPT
+from services.learning_service import get_business_learnings
 
 
 client = Groq(
@@ -11,13 +12,27 @@ client = Groq(
 )
 
 
-def generate_action(opportunity, business_analysis):
+def generate_action(
+    opportunity,
+    business_analysis,
+    business_id,
+):
     """
     Generate a proposed action for a growth opportunity.
 
-    This function does not execute anything.
+    Historical learnings are provided to the model as additional
+    context. This function does not execute anything.
     It only creates a proposed action for later approval.
     """
+
+    if not business_id:
+        raise ValueError("business_id is required")
+
+    learnings = get_business_learnings(
+        business_id=business_id,
+        limit=20,
+        learning_type="marketing",
+    )
 
     prompt = f"""
 Business understanding:
@@ -35,6 +50,20 @@ Growth opportunity:
     indent=2,
     ensure_ascii=False,
 )}
+
+Historical learnings:
+
+{json.dumps(
+    learnings,
+    indent=2,
+    ensure_ascii=False,
+)}
+
+Use the historical learnings as supporting evidence when
+determining the most appropriate action for this opportunity.
+
+Do not assume that a historical learning guarantees the same
+outcome in the future.
 
 Determine the most appropriate action for this opportunity.
 """

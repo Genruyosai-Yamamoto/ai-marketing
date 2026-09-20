@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from agent.learning_generator import generate_learning_from_measurement
 from firebase import db
 
 
@@ -10,6 +10,7 @@ def create_learning(
     outcome,
     learning,
     confidence,
+    learning_type,
 ):
     """
     Create a learning record from an execution outcome.
@@ -48,6 +49,9 @@ def create_learning(
         confidence = float(confidence)
     except (TypeError, ValueError):
         raise ValueError("confidence must be a number")
+    
+    if not learning_type:
+        raise ValueError("learning_type is required")
 
     if confidence < 0 or confidence > 1:
         raise ValueError("confidence must be between 0 and 1")
@@ -74,6 +78,24 @@ def create_learning(
         raise ValueError("Execution not found")
 
     execution = execution_doc.to_dict()
+    
+    action_id = execution.get("action_id")
+
+    if not action_id:
+        raise ValueError("Execution has no action_id")
+
+    action_ref = (
+        business_ref
+        .collection("actions")
+        .document(action_id)
+    )
+
+    action_doc = action_ref.get()
+
+    if not action_doc.exists:
+        raise ValueError("Action not found")
+
+    action = action_doc.to_dict()
 
     now = datetime.utcnow().isoformat()
 
@@ -86,17 +108,141 @@ def create_learning(
     learning_data = {
         "business_id": business_id,
         "execution_id": execution_id,
-        "action_id": execution.get("action_id"),
+        "action_id": action_id,
+        "learning_type": learning_type,
+        "action_type": action.get("action_type"),
         "observation": observation,
         "outcome": outcome,
         "learning": learning,
         "confidence": confidence,
         "created_at": now,
     }
-
+    
     learning_ref.set(learning_data)
 
     return {
         "id": learning_ref.id,
         **learning_data,
     }
+
+def create_learning_from_measurement(
+    business_id,
+    measurement_id,
+):
+    """
+    Generate and persist a learning from an existing measurement.
+    """
+
+    if not business_id:
+        raise ValueError("business_id is required")
+
+    if not measurement_id:
+        raise ValueError("measurement_id is required")
+
+    business_ref = (
+        db.collection("businesses")
+        .document(business_id)
+    )
+
+    business_doc = business_ref.get()
+
+    if not business_doc.exists:
+        raise ValueError("Business not found")
+
+    measurement_ref = (
+        business_ref
+        .collection("measurements")
+        .document(measurement_id)
+    )
+
+    measurement_doc = measurement_ref.get()
+
+    if not measurement_doc.exists:
+        raise ValueError("Measurement not found")
+
+    measurement = measurement_doc.to_dict()
+
+    execution_id = measurement.get("execution_id")
+
+    if not execution_id:
+        raise ValueError(
+            "Measurement has no execution_id"
+        )
+
+    generated_learning = generate_learning_from_measurement(
+        measurement
+    )
+
+    return create_learning(
+        business_id=business_id,
+        execution_id=execution_id,
+        observation=generated_learning["observation"],
+        outcome=generated_learning["outcome"],
+        learning=generated_learning["learning"],
+        confidence=generated_learning["confidence"],
+        learning_type=generated_learning["learning_type"],
+    )
+    
+def get_business_learnings(
+    business_id,
+    limit=20,
+    action_type=None,
+    learning_type=None,
+):
+    """
+    Retrieve recent learnings for a business.
+    """
+
+    if not business_id:
+        raise ValueError("business_id is required")
+
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        raise ValueError("limit must be a number")
+
+    if limit <= 0:
+        raise ValueError("limit must be greater than 0")
+
+    business_ref = (
+        db.collection("businesses")
+        .document(business_id)
+    )
+
+    business_doc = business_ref.get()
+
+    if not business_doc.exists:
+        raise ValueError("Business not found")
+
+    learnings_query = (
+        business_ref
+        .collection("learnings")
+        .order_by("created_at", direction="DESCENDING")
+        .limit(limit)
+    )
+
+    learnings = []
+
+    for doc in learnings_query.stream():
+        learning = doc.to_dict()
+
+        learnings.append({
+            "id": doc.id,
+            **learning,
+        })
+
+    if action_type:
+        learnings = [
+            learning
+            for learning in learnings
+            if learning.get("action_type") == action_type
+        ]
+    
+    if learning_type:
+        learnings = [
+            learning
+            for learning in learnings
+            if learning.get("learning_type") == learning_type
+        ]
+
+    return learnings

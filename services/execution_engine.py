@@ -1,6 +1,7 @@
 from datetime import datetime
 from connectors import get_connector
 from services.measurement_service import record_measurement
+from services.learning_service import create_learning_from_measurement
 
 from firebase import db
 
@@ -72,12 +73,17 @@ def execute_action(business_id, execution_id):
             "completed_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat(),
         })
-        record_measurement(
+        measurement = record_measurement(
             business_id=business_id,
             execution_id=execution_id,
             metric="execution_success",
             value=1,
             source="execution_engine",
+        )
+
+        create_learning_from_measurement(
+            business_id=business_id,
+            measurement_id=measurement["id"],
         )
 
         return result
