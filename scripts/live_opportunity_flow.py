@@ -12,7 +12,7 @@ from website_analyzer import analyze_html, fetch_website_html
 from agent.analyzer import analyze_observation
 from agent.opportunity_generator import generate_opportunities
 
-SOURCE_URL = "https://example.com"
+SOURCE_URL = "https://logbook-ai.onrender.com"
 
 
 def main():

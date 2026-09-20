@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from flask import Flask, request,render_template
 from routes.auth import auth_bp
 from routes.user import user_bp
+from routes.instagram_connections import instagram_connections_bp
 from routes.auth_api import api_auth_bp
 from routes.business_api import business_api_bp
 # from routes.payment import payment_bp
@@ -42,6 +43,7 @@ app.config.update(
 # Register blueprints
 app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
+app.register_blueprint(instagram_connections_bp)
 app.register_blueprint(api_auth_bp)
 app.register_blueprint(business_api_bp)
 # app.register_blueprint(payment_bp)
@@ -72,7 +74,7 @@ def server_error(e):
 if __name__ == "__main__":
     import os
 
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 8000))
     ssl_context = ("cert.pem", "key.pem")  # cert file, key file
 
     app.run(

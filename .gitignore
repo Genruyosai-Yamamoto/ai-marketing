@@ -45,7 +45,7 @@ test.py
 # --- Python Metadata ---
 *.egg-info/
 
-church-54be3-firebase-adminsdk-fbsvc-*.json
+hello.txt
 
 # Firebase service-account keys — never commit
 ai-agent-*-firebase-adminsdk-*.json
