@@ -11,6 +11,10 @@ def create_learning(
     learning,
     confidence,
     learning_type,
+    metric=None,
+    previous_value=None,
+    value=None,
+    direction=None,
 ):
     """
     Create a learning record from an execution outcome.
@@ -109,8 +113,12 @@ def create_learning(
         "business_id": business_id,
         "execution_id": execution_id,
         "action_id": action_id,
-        "learning_type": learning_type,
         "action_type": action.get("action_type"),
+        "learning_type": learning_type,
+        "metric": metric,
+        "previous_value": previous_value,
+        "value": value,
+        "direction": direction,
         "observation": observation,
         "outcome": outcome,
         "learning": learning,
@@ -181,6 +189,10 @@ def create_learning_from_measurement(
         learning=generated_learning["learning"],
         confidence=generated_learning["confidence"],
         learning_type=generated_learning["learning_type"],
+        metric=generated_learning.get("metric"),
+        previous_value=generated_learning.get("previous_value"),
+        value=generated_learning.get("value"),
+        direction=generated_learning.get("direction"),
     )
     
 def get_business_learnings(

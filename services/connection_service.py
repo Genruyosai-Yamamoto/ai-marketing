@@ -143,6 +143,9 @@ def get_connection(
         "username": connection.get(
             "username"
         ),
+        "site_id": connection.get(
+            "site_id"
+        ),
         "token_expires_at": connection.get(
             "token_expires_at"
         ),

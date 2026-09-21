@@ -2,8 +2,11 @@ def generate_learning_from_measurement(measurement):
     """
     Generate a structured learning from a measurement.
 
-    This first version is deterministic.
-    It does not use an LLM.
+    Supports:
+    - operational execution measurements
+    - marketing before/after measurements
+
+    This version is deterministic and does not use an LLM.
     """
 
     if not measurement:
@@ -17,6 +20,10 @@ def generate_learning_from_measurement(measurement):
 
     if value is None:
         raise ValueError("measurement value is required")
+
+    # ---------------------------------------------------------
+    # Operational measurement
+    # ---------------------------------------------------------
 
     if metric == "execution_success":
         if value == 1:
@@ -43,6 +50,77 @@ def generate_learning_from_measurement(measurement):
             ),
             "confidence": 1.0,
         }
+
+    # ---------------------------------------------------------
+    # Marketing before/after measurement
+    # ---------------------------------------------------------
+
+    previous_value = measurement.get("previous_value")
+
+    if previous_value is not None:
+        try:
+            previous_value = float(previous_value)
+            current_value = float(value)
+        except (TypeError, ValueError):
+            raise ValueError(
+                "previous_value and value must be numbers"
+            )
+
+        if current_value > previous_value:
+            outcome = "positive"
+            direction = "increase"
+
+            observation = (
+                f"The metric '{metric}' increased from "
+                f"{previous_value} to {current_value}."
+            )
+
+            learning = (
+                f"The measured '{metric}' was higher after the action."
+            )
+
+        elif current_value < previous_value:
+            outcome = "negative"
+            direction = "decrease"
+
+            observation = (
+                f"The metric '{metric}' decreased from "
+                f"{previous_value} to {current_value}."
+            )
+
+            learning = (
+                f"The measured '{metric}' was lower after the action."
+            )
+
+        else:
+            outcome = "neutral"
+            direction = "unchanged"
+
+            observation = (
+                f"The metric '{metric}' remained unchanged at "
+                f"{current_value}."
+            )
+
+            learning = (
+                f"The measured '{metric}' showed no change after the action."
+            )
+
+        return {
+            "learning_type": "marketing",
+            "metric": metric,
+            "previous_value": previous_value,
+            "value": current_value,
+            "direction": direction,
+            "observation": observation,
+            "outcome": outcome,
+            "learning": learning,
+            "confidence": 0.7,
+        }
+        
+
+    # ---------------------------------------------------------
+    # Generic marketing measurement
+    # ---------------------------------------------------------
 
     return {
         "learning_type": "marketing",

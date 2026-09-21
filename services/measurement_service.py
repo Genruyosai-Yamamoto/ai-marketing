@@ -9,6 +9,7 @@ def record_measurement(
     metric,
     value,
     source,
+    previous_value=None,
 ):
     """
     Record a measurement for an execution.
@@ -74,6 +75,7 @@ def record_measurement(
         "metric": metric,
         "value": value,
         "source": source,
+        "previous_value": previous_value,
         "measured_at": now,
         "created_at": now,
     }

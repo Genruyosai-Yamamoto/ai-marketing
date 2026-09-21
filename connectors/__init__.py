@@ -1,5 +1,6 @@
 from connectors.dry_run import DryRunConnector
 from connectors.instagram import InstagramConnector
+from connectors.website import WebsiteConnector
 
 
 def get_connector(action):
@@ -10,6 +11,9 @@ def get_connector(action):
 
     if action_type == "social":
         return InstagramConnector()
+
+    if action_type == "website":
+        return WebsiteConnector()
 
     raise ValueError(
         f"No connector available for action type: {action_type}"
