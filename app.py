@@ -11,6 +11,7 @@ from routes.auth import auth_bp
 from routes.user import user_bp
 from routes.instagram_connections import instagram_connections_bp
 from routes.auth_api import api_auth_bp
+from routes.github_connections import github_connections_bp
 from routes.business_api import business_api_bp
 # from routes.payment import payment_bp
 from datetime import timedelta
@@ -25,8 +26,7 @@ if not app.secret_key:
         "SECRET_KEY environment variable is missing"
     )
 
-app.config["DEBUG"] = os.getenv("DEBUG", "False").lower() == "true"
-
+app.config["DEBUG"] = os.getenv("DEBUG", "True").lower() == "true"
 
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
@@ -45,6 +45,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(instagram_connections_bp)
 app.register_blueprint(api_auth_bp)
+app.register_blueprint(github_connections_bp)
 app.register_blueprint(business_api_bp)
 # app.register_blueprint(payment_bp)
 
@@ -74,7 +75,7 @@ def server_error(e):
 if __name__ == "__main__":
     import os
 
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 5000))
     ssl_context = ("cert.pem", "key.pem")  # cert file, key file
 
     app.run(

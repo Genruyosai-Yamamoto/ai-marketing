@@ -1,6 +1,11 @@
 import requests
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
-
+GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
+GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
+GITHUB_REDIRECT_URI = os.getenv("GITHUB_REDIRECT_URI")
 GITHUB_API_BASE_URL = "https://api.github.com"
 GITHUB_API_VERSION = "2026-03-10"
 
@@ -26,6 +31,75 @@ class GitHubAPI:
             "X-GitHub-Api-Version": GITHUB_API_VERSION,
         }
         
+    @staticmethod
+    def get_authorization_url(state):
+        if not GITHUB_CLIENT_ID:
+            raise ValueError("GITHUB_CLIENT_ID is not configured")
+
+        from urllib.parse import urlencode
+
+        params = {
+            "client_id": GITHUB_CLIENT_ID,
+            "redirect_uri": GITHUB_REDIRECT_URI,
+            "scope": "repo",
+            "state": state,
+        }
+
+        return (
+            "https://github.com/login/oauth/authorize?"
+            + urlencode(params)
+        )
+        
+    @staticmethod
+    def exchange_code_for_token(code):
+        if not GITHUB_CLIENT_ID:
+            raise ValueError("GITHUB_CLIENT_ID is not configured")
+
+        if not GITHUB_CLIENT_SECRET:
+            raise ValueError("GITHUB_CLIENT_SECRET is not configured")
+
+        response = requests.post(
+            "https://github.com/login/oauth/access_token",
+            headers={
+                "Accept": "application/json",
+            },
+            data={
+                "client_id": GITHUB_CLIENT_ID,
+                "client_secret": GITHUB_CLIENT_SECRET,
+                "code": code,
+                "redirect_uri": GITHUB_REDIRECT_URI,
+            },
+            timeout=10,
+        )
+
+        if not response.ok:
+            raise GitHubAPIError(
+                f"GitHub OAuth token exchange failed: "
+                f"{response.status_code}"
+            )
+
+        data = response.json()
+
+        if "error" in data:
+            raise GitHubAPIError(
+                data.get("error_description")
+                or data.get("error")
+                or "GitHub OAuth token exchange failed"
+            )
+
+        access_token = data.get("access_token")
+
+        if not access_token:
+            raise GitHubAPIError(
+                "GitHub OAuth response did not contain an access token"
+            )
+
+        return {
+            "access_token": access_token,
+            "token_type": data.get("token_type"),
+            "scope": data.get("scope"),
+        }
+        
     def get_authenticated_user(self):
         response = requests.get(
             f"{self.base_url}/user",
@@ -47,7 +121,36 @@ class GitHubAPI:
             "name": data.get("name"),
             "email": data.get("email"),
         }
-        
+    def list_repositories(self):
+        response = requests.get(
+            f"{self.base_url}/user/repos",
+            headers=self.headers,
+            params={
+                "per_page": 100,
+                "sort": "updated",
+                "direction": "desc",
+            },
+            timeout=10,
+        )
+
+        if not response.ok:
+            raise GitHubAPIError(
+                f"GitHub repository listing failed: {response.status_code}"
+            )
+
+        repositories = response.json()
+
+        return [
+            {
+                "id": repo.get("id"),
+                "name": repo.get("name"),
+                "full_name": repo.get("full_name"),
+                "private": repo.get("private"),
+                "default_branch": repo.get("default_branch"),
+                "html_url": repo.get("html_url"),
+            }
+            for repo in repositories
+        ]
     def get_repository(self, owner, repo):
         response = requests.get(
             f"{self.base_url}/repos/{owner}/{repo}",
