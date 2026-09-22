@@ -1,6 +1,7 @@
 from connectors.dry_run import DryRunConnector
 from connectors.instagram import InstagramConnector
 from connectors.website import WebsiteConnector
+from connectors.github import GitHubConnector
 
 
 def get_connector(action):
@@ -8,6 +9,9 @@ def get_connector(action):
 
     if action_type == "dry_run":
         return DryRunConnector()
+    
+    if action_type == "github":
+        return GitHubConnector()
 
     if action_type == "social":
         return InstagramConnector()

@@ -1,5 +1,6 @@
 from datetime import datetime
-
+from agent.learning_generator import generate_learning_from_measurement
+from services.learning_service import create_learning
 from firebase import db
 
 
@@ -81,8 +82,24 @@ def record_measurement(
     }
 
     measurement_ref.set(measurement)
+    learning = generate_learning_from_measurement(measurement)
+
+    learning_record = create_learning(
+        business_id=business_id,
+        execution_id=execution_id,
+        learning_type=learning["learning_type"],
+        observation=learning["observation"],
+        outcome=learning["outcome"],
+        learning=learning["learning"],
+        confidence=learning["confidence"],
+        metric=learning.get("metric"),
+        previous_value=learning.get("previous_value"),
+        value=learning.get("value"),
+        direction=learning.get("direction"),
+    )
 
     return {
         "id": measurement_ref.id,
         **measurement,
+        "learning": learning_record,
     }

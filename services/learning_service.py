@@ -1,7 +1,8 @@
 from datetime import datetime
 from agent.learning_generator import generate_learning_from_measurement
 from firebase import db
-
+from firebase import db
+from google.cloud import firestore
 
 def create_learning(
     business_id,
@@ -10,25 +11,18 @@ def create_learning(
     outcome,
     learning,
     confidence,
-    learning_type,
+    learning_type=None,
     metric=None,
     previous_value=None,
     value=None,
     direction=None,
+    measurement_id=None,
 ):
     """
     Create a learning record from an execution outcome.
 
-    Args:
-        business_id: Business associated with the execution.
-        execution_id: Execution that produced the outcome.
-        observation: What happened.
-        outcome: High-level result, e.g. success or failure.
-        learning: What the agent should remember.
-        confidence: Confidence score between 0 and 1.
-
-    Returns:
-        Dictionary containing the created learning.
+    If measurement_id is provided, the learning is tied to that
+    measurement so duplicate learnings can be prevented.
     """
 
     if not business_id:
@@ -53,7 +47,7 @@ def create_learning(
         confidence = float(confidence)
     except (TypeError, ValueError):
         raise ValueError("confidence must be a number")
-    
+
     if not learning_type:
         raise ValueError("learning_type is required")
 
@@ -82,7 +76,7 @@ def create_learning(
         raise ValueError("Execution not found")
 
     execution = execution_doc.to_dict()
-    
+
     action_id = execution.get("action_id")
 
     if not action_id:
@@ -103,17 +97,25 @@ def create_learning(
 
     now = datetime.utcnow().isoformat()
 
-    learning_ref = (
-        business_ref
-        .collection("learnings")
-        .document()
-    )
+    if measurement_id:
+        learning_ref = (
+            business_ref
+            .collection("learnings")
+            .document(measurement_id)
+        )
+    else:
+        learning_ref = (
+            business_ref
+            .collection("learnings")
+            .document()
+        )
 
     learning_data = {
         "business_id": business_id,
         "execution_id": execution_id,
         "action_id": action_id,
         "action_type": action.get("action_type"),
+        "measurement_id": measurement_id,
         "learning_type": learning_type,
         "metric": metric,
         "previous_value": previous_value,
@@ -125,12 +127,49 @@ def create_learning(
         "confidence": confidence,
         "created_at": now,
     }
-    
+
+    if measurement_id:
+        transaction = db.transaction()
+
+        @firestore.transactional
+        def create_learning_transaction(transaction):
+            snapshot = learning_ref.get(transaction=transaction)
+
+            if snapshot.exists:
+                return {
+                    "already_exists": True,
+                    "learning": {
+                        "id": snapshot.id,
+                        **snapshot.to_dict(),
+                    },
+                }
+
+            transaction.create(
+                learning_ref,
+                learning_data,
+            )
+
+            return {
+                "already_exists": False,
+                "learning": {
+                    "id": learning_ref.id,
+                    **learning_data,
+                },
+            }
+
+        result = create_learning_transaction(transaction)
+
+        return {
+            **result["learning"],
+            "already_exists": result["already_exists"],
+        }
+
     learning_ref.set(learning_data)
 
     return {
         "id": learning_ref.id,
         **learning_data,
+        "already_exists": False,
     }
 
 def create_learning_from_measurement(
@@ -139,6 +178,10 @@ def create_learning_from_measurement(
 ):
     """
     Generate and persist a learning from an existing measurement.
+
+    This operation is idempotent: calling it multiple times for the
+    same measurement returns the existing learning instead of creating
+    duplicates.
     """
 
     if not business_id:
@@ -193,6 +236,7 @@ def create_learning_from_measurement(
         previous_value=generated_learning.get("previous_value"),
         value=generated_learning.get("value"),
         direction=generated_learning.get("direction"),
+        measurement_id=measurement_id,
     )
     
 def get_business_learnings(
@@ -258,3 +302,4 @@ def get_business_learnings(
         ]
 
     return learnings
+

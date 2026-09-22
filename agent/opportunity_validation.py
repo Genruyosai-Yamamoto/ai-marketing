@@ -1,14 +1,46 @@
+import re
+
+
+def _normalize_problem_key(value):
+    if not isinstance(value, str):
+        return None
+
+    value = value.strip().lower()
+    value = re.sub(r"[^a-z0-9]+", "_", value)
+    value = re.sub(r"_+", "_", value)
+    value = value.strip("_")
+
+    if not value:
+        return None
+
+    return value
+
 _IMPACT_RANKS = {"low": 0, "medium": 1, "high": 2}
 _ALLOWED_TYPES = {"website", "content", "seo", "conversion", "social", "other"}
-_REQUIRED_KEYS = (
+_REQUIRED_KEYS = {
     "title",
     "description",
     "problem",
+    "problem_key",
     "evidence",
     "potential_impact",
     "confidence",
     "type",
-)
+}
+
+_ALLOWED_PROBLEM_KEYS = {
+    "social_proof",
+    "pricing_transparency",
+    "value_proposition",
+    "support_information",
+    "legal_information",
+    "seo_visibility",
+    "content_gap",
+    "conversion_friction",
+    "technical_issue",
+    "audience_targeting",
+    "other",
+}
 
 
 def validate_opportunity_item(item, index=0):
@@ -44,6 +76,22 @@ def validate_opportunity_item(item, index=0):
     otype = item.get("type")
     if not isinstance(otype, str) or otype not in _ALLOWED_TYPES:
         raise ValueError(f"{prefix}: type {otype!r} not in {sorted(_ALLOWED_TYPES)}")
+
+    if "problem_key" in item:
+        problem_key = _normalize_problem_key(item["problem_key"])
+
+        if not problem_key:
+            raise ValueError(
+                f"{prefix}: 'problem_key' must be a non-empty string"
+            )
+
+        if problem_key not in _ALLOWED_PROBLEM_KEYS:
+            raise ValueError(
+                f"{prefix}: problem_key {problem_key!r} "
+                f"not in {sorted(_ALLOWED_PROBLEM_KEYS)}"
+            )
+
+        item["problem_key"] = problem_key
 
     confidence = item.get("confidence")
     if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):

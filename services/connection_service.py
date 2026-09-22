@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from services.token_encryption import encrypt_token, decrypt_token
 from firebase import db
 
 
@@ -58,7 +58,7 @@ def create_connection(
         **connection,
     }
     
-from services.token_encryption import decrypt_token
+
 
 
 def get_connection(
@@ -151,3 +151,29 @@ def get_connection(
         ),
         "access_token": access_token,
     }
+    
+def create_github_connection(
+    business_id,
+    user_id,
+    access_token,
+    owner,
+    repo,
+    default_branch=None,
+):
+    connection_data = {
+        "account_id": owner,
+        "repository": repo,
+    }
+
+    if default_branch:
+        connection_data["default_branch"] = default_branch
+
+    return create_connection(
+        business_id=business_id,
+        user_id=user_id,
+        provider="github",
+        connection_data={
+            "access_token": access_token,
+            **connection_data,
+        },
+    )

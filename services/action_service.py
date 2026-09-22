@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from google.cloud.firestore_v1.base_query import FieldFilter
 from firebase import db
 
 
@@ -17,10 +17,10 @@ def create_action(
 
     if not opportunity_id:
         raise ValueError("opportunity_id is required")
-
+            
     if not isinstance(action, dict):
         raise ValueError("action must be a dictionary")
-
+    
     required_fields = {
         "action_title",
         "action_type",
@@ -46,6 +46,13 @@ def create_action(
     if not business_doc.exists:
         raise ValueError("Business not found")
 
+    business = business_doc.to_dict()
+
+    if business.get("owner_id") != owner_id:
+        raise ValueError(
+            "Owner does not have access to this business"
+        )
+        
     opportunity_ref = (
         business_ref
         .collection("opportunities")
@@ -59,6 +66,39 @@ def create_action(
 
     opportunity = opportunity_doc.to_dict()
 
+    if opportunity.get("owner_id") != owner_id:
+            raise ValueError(
+                "You do not have permission to use this opportunity"
+            )
+            
+    
+    existing_action_docs = (
+        business_ref
+        .collection("actions")
+        .where(
+            filter=FieldFilter(
+                "opportunity_id",
+                "==",
+                opportunity_id,
+            )
+        )
+        .stream()
+    )
+
+    for action_doc in existing_action_docs:
+        existing_action = action_doc.to_dict()
+
+        if existing_action.get("status") in {
+            "pending_approval",
+            "approved",
+            "running",
+        }:
+            return {
+                "id": action_doc.id,
+                **existing_action,
+                "already_exists": True,
+            }
+    
     now = datetime.utcnow().isoformat()
 
     action_data = {
@@ -92,4 +132,5 @@ def create_action(
     return {
         "id": action_ref.id,
         **action_data,
+        "already_exists": False,
     }

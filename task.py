@@ -105,6 +105,8 @@ def analyze_business_website(self, business_id, user_id, run_id):
         # Lazy imports avoid constructing a Groq() client when task.py loads.
         from agent.analyzer import analyze_observation
         from agent.opportunity_generator import generate_opportunities
+        from services.opportunity_service import create_opportunity
+        from services.opportunity_action_service import generate_actions_for_opportunities
 
         try:
             analysis = analyze_observation(observation)
@@ -114,23 +116,31 @@ def analyze_business_website(self, business_id, user_id, run_id):
             opportunity_ids = []
 
             for position, opp in enumerate(opportunities):
-                opp_ref = business_ref.collection("opportunities").document()
-                opp_ref.set({
-                    **opp,
-                    "business_id": business_id,
-                    "owner_id": user_id,
-                    "position": position,
-                    "created_at": datetime.utcnow().isoformat(),
-                })
-                opportunity_ids.append(opp_ref.id)
+                result = create_opportunity(
+                    business_id=business_id,
+                    opportunity=opp,
+                    owner_id=user_id,
+                )
+
+                opportunity_ids.append(result["id"])
+            
+            planner_result = generate_actions_for_opportunities(
+                business_id=business_id,
+                owner_id=user_id,
+                business_analysis=analysis,
+                opportunity_ids=opportunity_ids,
+            )
 
             # Single terminal completed transition
             run_ref.update({
                 "status": "completed",
                 "observation_id": observation_ref.id,
                 "opportunity_ids": opportunity_ids,
+                "actions_created": planner_result["actions_created"],
+                "actions_existing": planner_result["actions_existing"],
                 "completed_at": datetime.utcnow().isoformat(),
             })
+            
         except Exception as exc:
             run_ref.update({
                 "status": "failed",
@@ -143,6 +153,8 @@ def analyze_business_website(self, business_id, user_id, run_id):
             "success": True,
             "observation_id": observation_ref.id,
             "opportunity_ids": opportunity_ids,
+            "actions_created": planner_result["actions_created"],
+            "actions_existing": planner_result["actions_existing"],
             "run_id": run_id,
         }
 

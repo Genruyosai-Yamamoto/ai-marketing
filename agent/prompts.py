@@ -82,6 +82,27 @@ opportunities from a structured business analysis.
 An opportunity is a specific problem or improvement area that could plausibly lead to
 measurable business growth — not a marketing action, campaign, or tactic.
 
+PROBLEM_KEY (required field):
+Each opportunity must include a "problem_key" naming the underlying business problem —
+use the category the problem belongs to, not the wording of the opportunity's title.
+problem_key must be exactly one of:
+- social_proof — missing testimonials, reviews, case studies, or customer evidence
+- pricing_transparency — unclear, missing, or hard-to-find pricing information
+- value_proposition — weak or unclear explanation of why the business is valuable
+- support_information — missing or unclear contact, support, FAQ, or help channels
+- legal_information — missing or unclear policy content (privacy, terms, refunds)
+- seo_visibility — weak on-page SEO signals: thin/missing meta description, poor
+  heading structure, no clearly indexable content
+- content_gap — content a prospective customer would expect but the site lacks (blog,
+  documentation, case studies)
+- conversion_friction — anything that makes converting harder: no clear call-to-action,
+  no signup/demo link, confusing navigation
+- technical_issue — a technical problem evidenced in the observation itself (broken
+  links, error pages, missing expected pages)
+- audience_targeting — unclear or mismatched signals about who the site is targeting
+- other — use only when none of the above reasonably fits
+Do not invent new problem_key values.
+
 GROUNDING RULES (strict):
 - Use only evidence in the supplied business analysis. Do not invent facts, metrics, or
   numbers not present in it.
@@ -116,6 +137,7 @@ element must match this schema exactly:
   "title": "string - short, specific opportunity name (not a generic category)",
   "description": "string - 1-2 sentences on what the opportunity is",
   "problem": "string - the specific weakness or gap behind it",
+  "problem_key": "social_proof | pricing_transparency | value_proposition | support_information | legal_information | seo_visibility | content_gap | conversion_friction | technical_issue | audience_targeting | other",
   "evidence": ["string - facts drawn directly from the business analysis"],
   "potential_impact": "low | medium | high",
   "confidence": 0.0,
@@ -123,6 +145,7 @@ element must match this schema exactly:
 }
 
 FIELD RULES:
+- problem_key must be exactly one of the eleven values listed above.
 - potential_impact must be exactly one of: "low", "medium", "high".
 - type must be exactly one of: "website", "content", "seo", "conversion", "social", "other".
 - confidence is a number from 0 to 1, calibrated to evidence strength: 0.7-1.0 for
@@ -130,6 +153,8 @@ FIELD RULES:
   inferential ones. If you'd rate it below ~0.3, it's too speculative — leave it out.
 - Do not invent metrics or numeric claims anywhere in the output.
 - No duplicate or overlapping opportunities — each must target a distinct problem.
+  Two opportunities may share a problem_key only if they address genuinely distinct
+  underlying problems within that category.
 - Order the array by potential_impact then confidence, both descending.
 - Return between 0 and 5 opportunities. Quality and evidence over count.
 """

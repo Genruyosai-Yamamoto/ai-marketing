@@ -1,5 +1,7 @@
+import os
 import requests
-from config import WEBSITE_API_BASE_URL
+
+WEBSITE_API_BASE_URL = os.getenv("WEBSITE_API_BASE_URL")
 
 
 class WebsiteAPIError(Exception):
