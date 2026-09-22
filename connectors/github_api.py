@@ -173,139 +173,214 @@ class GitHubAPI:
             "private": data.get("private"),
         }
         
-        def create_branch(self, owner, repo, branch_name, sha):
-            response = requests.post(
-                f"{self.base_url}/repos/{owner}/{repo}/git/refs",
-                headers=self.headers,
-                json={
-                    "ref": f"refs/heads/{branch_name}",
-                    "sha": sha,
-                },
-                timeout=10,
+    def create_branch(self, owner, repo, branch_name, sha):
+        response = requests.post(
+            f"{self.base_url}/repos/{owner}/{repo}/git/refs",
+            headers=self.headers,
+            json={
+                "ref": f"refs/heads/{branch_name}",
+                "sha": sha,
+            },
+            timeout=10,
+        )
+
+        if not response.ok:
+            raise GitHubAPIError(
+                f"GitHub branch creation failed: {response.status_code}"
             )
 
-            if not response.ok:
-                raise GitHubAPIError(
-                    f"GitHub branch creation failed: {response.status_code}"
-                )
+        data = response.json()
 
-            data = response.json()
-
-            return {
-                "ref": data.get("ref"),
-                "sha": data.get("object", {}).get("sha"),
-            }
+        return {
+            "ref": data.get("ref"),
+            "sha": data.get("object", {}).get("sha"),
+        }
         
-        def get_file(self, owner, repo, path, ref=None):
-            params = {}
+    def get_file(self, owner, repo, path, ref=None):
+        params = {}
 
-            if ref:
-                params["ref"] = ref
+        if ref:
+            params["ref"] = ref
 
-            response = requests.get(
-                f"{self.base_url}/repos/{owner}/{repo}/contents/{path}",
-                headers=self.headers,
-                params=params,
-                timeout=10,
+        response = requests.get(
+            f"{self.base_url}/repos/{owner}/{repo}/contents/{path}",
+            headers=self.headers,
+            params=params,
+            timeout=10,
+        )
+
+        if not response.ok:
+            raise GitHubAPIError(
+                f"GitHub file lookup failed: {response.status_code}"
             )
 
-            if not response.ok:
-                raise GitHubAPIError(
-                    f"GitHub file lookup failed: {response.status_code}"
-                )
+        data = response.json()
 
-            data = response.json()
-
-            return {
-                "name": data.get("name"),
-                "path": data.get("path"),
-                "sha": data.get("sha"),
-                "content": data.get("content"),
-                "encoding": data.get("encoding"),
-                "download_url": data.get("download_url"),
-            }
+        return {
+            "name": data.get("name"),
+            "path": data.get("path"),
+            "sha": data.get("sha"),
+            "content": data.get("content"),
+            "encoding": data.get("encoding"),
+            "download_url": data.get("download_url"),
+        }
         
-        def update_file(
-        self,
-        owner,
-        repo,
-        path,
-        content,
-        message,
-        branch,
-        sha=None,
-    ):
-            import base64
+    def update_file( self, owner, repo, path, content, message, branch, sha=None,):
+        import base64
 
-            encoded_content = base64.b64encode(
-                content.encode("utf-8")
-            ).decode("utf-8")
+        encoded_content = base64.b64encode(
+            content.encode("utf-8")
+        ).decode("utf-8")
 
-            payload = {
-                "message": message,
-                "content": encoded_content,
-                "branch": branch,
-            }
+        payload = {
+            "message": message,
+            "content": encoded_content,
+            "branch": branch,
+        }
 
-            if sha:
-                payload["sha"] = sha
+        if sha:
+            payload["sha"] = sha
 
-            response = requests.put(
-                f"{self.base_url}/repos/{owner}/{repo}/contents/{path}",
-                headers=self.headers,
-                json=payload,
-                timeout=10,
+        response = requests.put(
+            f"{self.base_url}/repos/{owner}/{repo}/contents/{path}",
+            headers=self.headers,
+            json=payload,
+            timeout=10,
+        )
+
+        if not response.ok:
+            raise GitHubAPIError(
+                f"GitHub file update failed: {response.status_code}"
             )
-
-            if not response.ok:
-                raise GitHubAPIError(
-                    f"GitHub file update failed: {response.status_code}"
-                )
-
-            data = response.json()
-
-            return {
-                "commit_sha": data.get("commit", {}).get("sha"),
-                "content_sha": data.get("content", {}).get("sha"),
-                "path": data.get("content", {}).get("path"),
-            }
+            
+        data = response.json()
         
-        def create_pull_request(
-        self,
-        owner,
-        repo,
-        title,
-        head,
-        base,
-        body=None,
-    ):
-            payload = {
-                "title": title,
-                "head": head,
-                "base": base,
-            }
+        return {
+            "commit_sha": data.get("commit", {}).get("sha"),
+            "content_sha": data.get("content", {}).get("sha"),
+            "path": data.get("content", {}).get("path"),
+        }
+        
+    def create_pull_request( self, owner, repo, title, head, base, body=None,):
+        payload = {
+            "title": title,
+            "head": head,
+            "base": base,
+        }
 
-            if body:
-                payload["body"] = body
+        if body:
+            payload["body"] = body
 
-            response = requests.post(
-                f"{self.base_url}/repos/{owner}/{repo}/pulls",
-                headers=self.headers,
-                json=payload,
-                timeout=10,
+        response = requests.post(
+            f"{self.base_url}/repos/{owner}/{repo}/pulls",
+            headers=self.headers,
+            json=payload,
+            timeout=10,
+        )
+
+        if not response.ok:
+            raise GitHubAPIError(
+                f"GitHub pull request creation failed: {response.status_code}"
             )
 
-            if not response.ok:
-                raise GitHubAPIError(
-                    f"GitHub pull request creation failed: {response.status_code}"
-                )
+        data = response.json()
 
-            data = response.json()
+        return {
+            "number": data.get("number"),
+            "url": data.get("html_url"),
+            "state": data.get("state"),
+            "head": data.get("head", {}).get("ref"),
+            "base": data.get("base", {}).get("ref"),
+        }
+        
+    def get_branch(self, owner, repo, branch):
+        response = requests.get(
+            f"{self.base_url}/repos/{owner}/{repo}/branches/{branch}",
+            headers=self.headers,
+            timeout=10,
+        )
 
-            return {
-                "number": data.get("number"),
-                "url": data.get("html_url"),
-                "state": data.get("state"),
-                "head": data.get("head", {}).get("ref"),
-                "base": data.get("base", {}).get("ref"),
+        if response.status_code == 404:
+            return None
+
+        if not response.ok:
+            raise GitHubAPIError(
+                f"GitHub branch lookup failed: {response.status_code}"
+            )
+
+        data = response.json()
+
+        return {
+            "name": data.get("name"),
+            "sha": data.get("commit", {}).get("sha"),
+            "protected": data.get("protected"),
+        }
+        
+    def get_repository_tree( self, owner, repo, sha, ):
+        response = requests.get(
+            f"{self.base_url}/repos/{owner}/{repo}/git/trees/{sha}",
+            headers=self.headers,
+            params={
+                "recursive": "1",
+            },
+            timeout=10,
+        )
+
+        if not response.ok:
+            raise GitHubAPIError(
+                f"GitHub repository tree lookup failed: "
+                f"{response.status_code}"
+            )
+
+        data = response.json()
+
+        return {
+            "sha": data.get("sha"),
+            "truncated": data.get("truncated"),
+            "tree": [
+                {
+                    "path": item.get("path"),
+                    "mode": item.get("mode"),
+                    "type": item.get("type"),
+                    "sha": item.get("sha"),
+                    "size": item.get("size"),
+                }
+                for item in data.get("tree", [])
+            ],
+        }
+    def list_pull_requests( self, owner, repo, head=None, base=None, state="open",):
+        params = {
+            "state": state,
+            "per_page": 100,
+        }
+
+        if head:
+            params["head"] = head
+
+        if base:
+            params["base"] = base
+
+        response = requests.get(
+            f"{self.base_url}/repos/{owner}/{repo}/pulls",
+            headers=self.headers,
+            params=params,
+            timeout=10,
+        )
+
+        if not response.ok:
+            raise GitHubAPIError(
+                f"GitHub pull request listing failed: {response.status_code}"
+            )
+
+        return [
+            {
+                "number": pr.get("number"),
+                "url": pr.get("html_url"),
+                "state": pr.get("state"),
+                "head": pr.get("head", {}).get("ref"),
+                "base": pr.get("base", {}).get("ref"),
+                "title": pr.get("title"),
             }
+            for pr in response.json()
+        ]
+        

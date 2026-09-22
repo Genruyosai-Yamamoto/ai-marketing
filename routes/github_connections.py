@@ -200,3 +200,105 @@ def github_connect():
         "success": True,
         "authorization_url": authorization_url,
     })
+    
+@github_connections_bp.route(
+    "/api/connections/github/repository",
+    methods=["PATCH"],
+)
+def select_github_repository():
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return jsonify({
+            "success": False,
+            "error": "Authentication required",
+        }), 401
+
+    business_id = request.args.get("business_id")
+
+    if not business_id:
+        return jsonify({
+            "success": False,
+            "error": "Missing business_id",
+        }), 400
+
+    data = request.get_json(silent=True) or {}
+
+    repository = data.get("repository")
+
+    if not repository:
+        return jsonify({
+            "success": False,
+            "error": "Missing repository",
+        }), 400
+
+    try:
+        from services.connection_service import get_connection
+
+        connection = get_connection(
+            business_id=business_id,
+            user_id=user_id,
+            provider="github",
+        )
+
+        if not connection:
+            return jsonify({
+                "success": False,
+                "error": "GitHub connection not found",
+            }), 404
+
+        github = GitHubAPI(
+            access_token=connection["access_token"]
+        )
+
+        owner, repo = repository.split("/", 1)
+
+        github_repo = github.get_repository(
+            owner=owner,
+            repo=repo,
+        )
+
+        if owner != connection.get("account_id"):
+            return jsonify({
+                "success": False,
+                "error": (
+                    "Repository does not belong to the connected "
+                    "GitHub account"
+                ),
+            }), 403
+
+        connection_ref = (
+            db.collection("businesses")
+            .document(business_id)
+            .collection("connections")
+            .document(connection["id"])
+        )
+
+        connection_ref.update({
+            "repository": github_repo["full_name"],
+            "default_branch": github_repo["default_branch"],
+        })
+
+        return jsonify({
+            "success": True,
+            "repository": github_repo["full_name"],
+            "default_branch": github_repo["default_branch"],
+        })
+
+    except ValueError:
+        return jsonify({
+            "success": False,
+            "error": "Repository must use owner/repository format",
+        }), 400
+
+    except PermissionError as exc:
+        return jsonify({
+            "success": False,
+            "error": str(exc),
+        }), 403
+
+    except Exception as exc:
+        return jsonify({
+            "success": False,
+            "error": str(exc),
+        }), 500

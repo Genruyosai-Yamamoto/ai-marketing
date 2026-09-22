@@ -149,6 +149,12 @@ def get_connection(
         "token_expires_at": connection.get(
             "token_expires_at"
         ),
+        "repository": connection.get(
+            "repository"
+        ),
+        "default_branch": connection.get(
+            "default_branch"
+        ),
         "access_token": access_token,
     }
     
