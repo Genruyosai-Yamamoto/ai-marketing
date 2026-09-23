@@ -29,6 +29,7 @@ def validate_action(action):
         "content_type",
         "page_url",
         "content",
+        "target_path",
     }
 
     missing_fields = required_fields - action.keys()
@@ -51,8 +52,17 @@ def validate_action(action):
     if not isinstance(action["action_title"], str):
         raise ValueError("action_title must be a string")
 
+
+    if action["target_path"] is not None and not isinstance(
+    action["target_path"], str
+):
+        raise ValueError(
+            "target_path must be a string or None"
+        )
+    
     if action["action_type"] not in {
         "website",
+        "github",
         "content",
         "seo",
         "social",

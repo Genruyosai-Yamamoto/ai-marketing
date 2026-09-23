@@ -11,6 +11,41 @@ class GitHubConnector(BaseConnector):
                 "GitHub connector only supports github actions"
             )
 
+        required_fields = {
+            "action_title",
+            "description",
+            "content",
+        }
+
+        missing_fields = {
+            field
+            for field in required_fields
+            if not action.get(field)
+        }
+
+        if missing_fields:
+            raise ValueError(
+                "GitHub action is missing required execution fields: "
+                f"{sorted(missing_fields)}"
+            )
+            
+        target_path = action.get("target_path")
+
+        if not target_path:
+            raise ValueError(
+                "GitHub action requires a target_path"
+            )
+
+        if target_path.startswith("/"):
+            raise ValueError(
+                "GitHub target_path must be relative to the repository root"
+            )
+
+        if ".." in target_path.split("/"):
+            raise ValueError(
+                "GitHub target_path cannot contain parent-directory traversal"
+            )
+
         connection = get_connection(
             business_id=business_id,
             user_id=user_id,
@@ -39,19 +74,45 @@ class GitHubConnector(BaseConnector):
             owner=owner,
             repo=repo,
         )
+        
+        branch_name = (
+            "agent/"
+            + action.get("action_title", "github-action")
+            .lower()
+            .replace(" ", "-")[:50]
+        )
 
+        branch_result = self.create_action_branch(
+            business_id=business_id,
+            user_id=user_id,
+            branch_name=branch_name,
+        )
+        
+        commit_result = self.update_file_on_branch(
+            business_id=business_id,
+            user_id=user_id,
+            branch_name=branch_result["branch"],
+            path=target_path,
+            content=action["content"],
+            commit_message=action["action_title"],
+        )
+        
+        
+    
         return {
             "success": True,
-            "status": "github_repository_verified",
+            "status": "github_file_updated",
             "message": (
-                "GitHub repository connection verified successfully. "
-                "No repository changes were made."
+                "GitHub file updated successfully on the agent branch. "
+                "No pull request was created."
             ),
             "business_id": business_id,
             "user_id": user_id,
             "repository": github_repo["full_name"],
             "default_branch": github_repo["default_branch"],
-            "private": github_repo["private"],
+            "target_path": target_path,
+            "branch": branch_result,
+            "commit": commit_result,
             "action_title": action.get("action_title"),
         }
     
@@ -160,7 +221,7 @@ class GitHubConnector(BaseConnector):
             title=pr_title,
             body=pr_body,
         )
-
+        
         return {
             "success": True,
             "branch": branch_result,

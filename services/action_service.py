@@ -117,6 +117,7 @@ def create_action(
         "content_type": action["content_type"],
         "page_url": action["page_url"],
         "content": action["content"],
+        "target_path": action["target_path"],
         "created_at": now,
         "updated_at": now,
     }
