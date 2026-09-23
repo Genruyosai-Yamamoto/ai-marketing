@@ -93,6 +93,18 @@ def github_callback():
             repo=request.args.get("repo"),
             default_branch=request.args.get("default_branch"),
         )
+        print(
+            "DEBUG GitHub connection created:",
+            {
+                "connection_id": connection.get("id"),
+                "provider": connection.get("provider"),
+                "account_id": connection.get("account_id"),
+                "repository": connection.get("repository"),
+                "default_branch": connection.get("default_branch"),
+                "access_token_present": bool(connection.get("access_token")),
+                "status": connection.get("status"),
+            },
+        )
 
         return jsonify({
             "success": True,

@@ -4,11 +4,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
+
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 GITHUB_REDIRECT_URI = os.getenv("GITHUB_REDIRECT_URI")
 GITHUB_API_BASE_URL = "https://api.github.com"
 GITHUB_API_VERSION = "2026-03-10"
-
+print(
+    "DEBUG GitHub OAuth config:",
+    {
+        "client_id": GITHUB_CLIENT_ID,
+        "client_id_length": len(GITHUB_CLIENT_ID) if GITHUB_CLIENT_ID else 0,
+        "redirect_uri": GITHUB_REDIRECT_URI,
+    },
+)
 
 class GitHubAPIError(Exception):
     """Raised when the GitHub API returns an error."""
@@ -45,10 +53,22 @@ class GitHubAPI:
             "state": state,
         }
 
-        return (
+        authorization_url = (
             "https://github.com/login/oauth/authorize?"
             + urlencode(params)
         )
+
+        print(
+            "DEBUG GitHub OAuth authorization URL:",
+            {
+                "client_id": GITHUB_CLIENT_ID,
+                "redirect_uri": GITHUB_REDIRECT_URI,
+                "state_present": bool(state),
+                "url": authorization_url,
+            },
+        )
+
+        return authorization_url
         
     @staticmethod
     def exchange_code_for_token(code):
@@ -62,14 +82,70 @@ class GitHubAPI:
             "https://github.com/login/oauth/access_token",
             headers={
                 "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded",
             },
             data={
                 "client_id": GITHUB_CLIENT_ID,
                 "client_secret": GITHUB_CLIENT_SECRET,
                 "code": code,
                 "redirect_uri": GITHUB_REDIRECT_URI,
+                "grant_type": "authorization_code",
             },
             timeout=10,
+        )
+        print(
+            "DEBUG GitHub OAuth POST payload:",
+            {
+                "client_id": GITHUB_CLIENT_ID[:6] + "..." if GITHUB_CLIENT_ID else None,
+                "client_secret_length": len(GITHUB_CLIENT_SECRET) if GITHUB_CLIENT_SECRET else 0,
+                "code_length": len(code) if code else 0,
+                "redirect_uri": GITHUB_REDIRECT_URI,
+            },
+        )
+        print(
+            "DEBUG GitHub OAuth request data:",
+            {
+                "client_id_present": bool(GITHUB_CLIENT_ID),
+                "client_secret_present": bool(GITHUB_CLIENT_SECRET),
+                "code_present": bool(code),
+                "redirect_uri": GITHUB_REDIRECT_URI,
+                "grant_type": "authorization_code",
+            },
+        )
+        print(
+            "DEBUG GitHub OAuth exchange:",
+            {
+                "status_code": response.status_code,
+                "url": response.url,
+                "history": [
+                    {
+                        "status_code": r.status_code,
+                        "url": r.url,
+                        "location": r.headers.get("Location"),
+                    }
+                    for r in response.history
+                ],
+                "content_type": response.headers.get("Content-Type"),
+            },
+        )
+        print(
+            "DEBUG GitHub OAuth response headers:",
+            {
+                "server": response.headers.get("Server"),
+                "x_github_request_id": response.headers.get("X-GitHub-Request-Id"),
+                "via": response.headers.get("Via"),
+                "content_length": response.headers.get("Content-Length"),
+                "cache_control": response.headers.get("Cache-Control"),
+            },
+        )
+
+        print(
+            "DEBUG GitHub OAuth request:",
+            {
+                "method": response.request.method,
+                "url": response.request.url,
+                "host": response.request.headers.get("Host"),
+            },
         )
 
         if not response.ok:
@@ -79,6 +155,15 @@ class GitHubAPI:
             )
 
         data = response.json()
+        print(
+            "DEBUG GitHub OAuth response body:",
+            {
+                "has_access_token": "access_token" in data,
+                "has_login": "login" in data,
+                "has_id": "id" in data,
+                "keys": list(data.keys()),
+            },
+        )
 
         if "error" in data:
             raise GitHubAPIError(
@@ -88,6 +173,16 @@ class GitHubAPI:
             )
 
         access_token = data.get("access_token")
+        print(
+            "DEBUG GitHub OAuth token metadata:",
+            {
+                "token_type": data.get("token_type"),
+                "scope": data.get("scope"),
+                "expires_in": data.get("expires_in"),
+                "refresh_token_present": bool(data.get("refresh_token")),
+                "access_token_present": bool(access_token),
+            },
+        )
 
         if not access_token:
             raise GitHubAPIError(
@@ -106,6 +201,18 @@ class GitHubAPI:
             headers=self.headers,
             timeout=10,
         )
+        print(
+            "DEBUG GitHub /user:",
+            {
+                "status_code": response.status_code,
+                "content_type": response.headers.get("Content-Type"),
+                "response_keys": (
+                    list(response.json().keys())
+                    if response.headers.get("Content-Type", "").startswith("application/json")
+                    else None
+                ),
+            },
+        )
 
         if not response.ok:
             raise GitHubAPIError(
@@ -114,13 +221,17 @@ class GitHubAPI:
             )
 
         data = response.json()
-
+        print(
+            "DEBUG GitHub OAuth token response keys:",
+            list(data.keys()),
+        )
         return {
             "id": data.get("id"),
             "login": data.get("login"),
             "name": data.get("name"),
             "email": data.get("email"),
         }
+        
     def list_repositories(self):
         response = requests.get(
             f"{self.base_url}/user/repos",

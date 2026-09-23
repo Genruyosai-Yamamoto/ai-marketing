@@ -114,12 +114,12 @@ def validate_opportunities(items):
     for index, item in enumerate(items):
         validate_opportunity_item(item, index)
 
-    for index in range(1, len(items)):
-        rank = _IMPACT_RANKS[items[index]["potential_impact"]]
-        conf = items[index]["confidence"]
-        prev_rank = _IMPACT_RANKS[items[index - 1]["potential_impact"]]
-        prev_conf = items[index - 1]["confidence"]
-        if rank > prev_rank or (rank == prev_rank and conf > prev_conf):
-            raise ValueError(f"opportunities out of order at index {index}")
+    items.sort(
+        key=lambda item: (
+            _IMPACT_RANKS[item["potential_impact"]],
+            item["confidence"],
+        ),
+        reverse=True,
+    )
 
     return items

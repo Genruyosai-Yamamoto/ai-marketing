@@ -3,12 +3,7 @@ from connectors.base import BaseConnector
 
 class WebsiteConnector(BaseConnector):
 
-    def execute(
-        self,
-        action,
-        business_id,
-        user_id,
-    ):
+    def execute(self, action, business_id, user_id, execution_id=None):
         """
         Execute an approved website action in dry-run mode.
 

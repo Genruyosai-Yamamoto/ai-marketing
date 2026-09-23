@@ -34,7 +34,7 @@ def analyze_business_website(self, business_id, user_id, run_id):
 
     if not business_doc.exists:
         run_ref.update({
-            "status": "failed",
+            "analysis_status": "failed",
             "error": "Business not found",
             "completed_at": datetime.utcnow().isoformat(),
         })
@@ -47,7 +47,7 @@ def analyze_business_website(self, business_id, user_id, run_id):
 
     if business.get("owner_id") != user_id:
         run_ref.update({
-            "status": "failed",
+            "analysis_status": "failed",
             "error": "Unauthorized",
             "completed_at": datetime.utcnow().isoformat(),
         })
@@ -60,7 +60,7 @@ def analyze_business_website(self, business_id, user_id, run_id):
 
     if not website_url:
         run_ref.update({
-            "status": "failed",
+            "analysis_status": "failed",
             "error": "Business has no website URL",
             "completed_at": datetime.utcnow().isoformat(),
         })
@@ -72,7 +72,7 @@ def analyze_business_website(self, business_id, user_id, run_id):
     try:
         # Mark job as running
         run_ref.update({
-            "status": "running",
+            "analysis_status": "running",
             "started_at": datetime.utcnow().isoformat(),
         })
 
@@ -89,7 +89,7 @@ def analyze_business_website(self, business_id, user_id, run_id):
             "source_url": website_url,
             "final_url": final_url,
             "analysis": analysis,
-            "status": "completed",
+            "analysis_status": "completed",
             "created_at": datetime.utcnow().isoformat(),
         }
 
@@ -133,17 +133,19 @@ def analyze_business_website(self, business_id, user_id, run_id):
 
             # Single terminal completed transition
             run_ref.update({
-                "status": "completed",
+                "analysis_status": "completed",
+                "status": "awaiting_approval",
                 "observation_id": observation_ref.id,
                 "opportunity_ids": opportunity_ids,
-                "actions_created": planner_result["actions_created"],
-                "actions_existing": planner_result["actions_existing"],
+                "actions_created": planner_result.get("actions_created", 0),
+                "actions_existing": planner_result.get("actions_existing", 0),
                 "completed_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.utcnow().isoformat(),
             })
             
         except Exception as exc:
             run_ref.update({
-                "status": "failed",
+                "analysis_status": "failed",
                 "error": str(exc),
                 "completed_at": datetime.utcnow().isoformat(),
             })
@@ -161,9 +163,51 @@ def analyze_business_website(self, business_id, user_id, run_id):
     except Exception as exc:
         # Mark run as failed
         run_ref.update({
-            "status": "failed",
+            "analysis_status": "failed",
             "error": str(exc),
             "completed_at": datetime.utcnow().isoformat(),
         })
 
+        raise
+
+@celery.task(bind=True, name="tasks.run_agent_cycle")
+def run_agent_cycle(self, business_id, user_id, run_id):
+    run_ref = (
+        db.collection("businesses")
+        .document(business_id)
+        .collection("agent_runs")
+        .document(run_id)
+    )
+
+    run_ref.update({
+        "status": "running",
+        "analysis_status": "queued",
+        "cycle_started_at": datetime.utcnow().isoformat(),
+    })
+
+    try:
+        result = analyze_business_website.delay(
+            business_id=business_id,
+            user_id=user_id,
+            run_id=run_id,
+        )
+
+        run_ref.update({
+            "analysis_task_id": result.id,
+            "analysis_status": "queued",
+            "updated_at": datetime.utcnow().isoformat(),
+        })
+
+        return {
+            "success": True,
+            "run_id": run_id,
+            "analysis_task_id": result.id,
+        }
+
+    except Exception as exc:
+        run_ref.update({
+            "status": "failed",
+            "error": str(exc),
+            "completed_at": datetime.utcnow().isoformat(),
+        })
         raise

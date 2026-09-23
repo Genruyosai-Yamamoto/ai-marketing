@@ -103,6 +103,10 @@ def get_connection(
             "==",
             "connected",
         )
+        .order_by(
+            "updated_at",
+            direction="DESCENDING",
+        )
         .limit(1)
         .stream()
     )

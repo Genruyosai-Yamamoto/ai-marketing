@@ -130,8 +130,7 @@ OUT OF SCOPE (a later agent handles these — do not do them here):
 - Do not claim an opportunity will definitely increase revenue or any specific metric.
 - Do not execute anything — only identify and describe the opportunity.
 
-Return ONLY a valid JSON array — no markdown fences, no preamble, no commentary. Each
-element must match this schema exactly:
+Each element of the array must match this schema exactly:
 
 {
   "title": "string - short, specific opportunity name (not a generic category)",
@@ -143,6 +142,14 @@ element must match this schema exactly:
   "confidence": 0.0,
   "type": "website | content | seo | conversion | social | other"
 }
+
+OUTPUT FORMAT (strict):
+- Return exactly one JSON array and nothing else — no markdown fences, no preamble, no
+  trailing commentary — even when the array is empty ([]).
+- Not a JSON object, not multiple arrays: a single top-level array of opportunity
+  objects (zero or more).
+- Use double quotes for every key and string value. No trailing commas, no comments.
+- The output must be valid JSON that a standard parser can load with no cleanup.
 
 FIELD RULES:
 - problem_key must be exactly one of the eleven values listed above.

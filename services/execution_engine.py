@@ -25,6 +25,9 @@ def execute_action(business_id, execution_id):
         raise ValueError("Execution not found")
 
     execution = execution_doc.to_dict()
+    
+    if execution.get("status") == "completed":
+        return execution.get("result")
 
     action_id = execution.get("action_id")
 
@@ -51,7 +54,11 @@ def execute_action(business_id, execution_id):
         )
 
     now = datetime.utcnow().isoformat()
-
+    
+    if execution.get("status") not in {"queued", "running"}:
+        raise ValueError(
+            f"Execution cannot start from status: {execution.get('status')}"
+        )
     execution_ref.update({
         "status": "running",
         "started_at": now,
@@ -65,6 +72,7 @@ def execute_action(business_id, execution_id):
             action,
             business_id,
             execution.get("owner_id"),
+            execution_id=execution_id,
         )
 
         execution_ref.update({

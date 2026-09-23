@@ -2,10 +2,14 @@ import difflib
 from connectors.base import BaseConnector
 from connectors.github_api import GitHubAPI
 from services.connection_service import get_connection
-
+import uuid
 
 class GitHubConnector(BaseConnector):
-    def execute(self, action, business_id, user_id):
+    def execute(self, action, business_id, user_id, execution_id=None):
+        if not execution_id:
+            raise ValueError(
+                "GitHub execution requires an execution_id"
+            )
         if action.get("action_type") != "github":
             raise ValueError(
                 "GitHub connector only supports github actions"
@@ -79,7 +83,9 @@ class GitHubConnector(BaseConnector):
             "agent/"
             + action.get("action_title", "github-action")
             .lower()
-            .replace(" ", "-")[:50]
+            .replace(" ", "-")[:30]
+            + "-"
+            + execution_id[:12]
         )
 
         branch_result = self.create_action_branch(
@@ -268,7 +274,7 @@ class GitHubConnector(BaseConnector):
             owner=owner,
             repo=repo,
             path=path,
-            ref=default_branch,
+            ref=branch_name,
         )
         
         import base64
