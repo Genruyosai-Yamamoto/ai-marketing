@@ -20,6 +20,9 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 # Create the Flask app
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
+from flask_cors import CORS
+CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
+
 app.secret_key = os.getenv("SECRET_KEY")
 if not app.secret_key:
     raise RuntimeError(
