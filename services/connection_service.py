@@ -117,9 +117,9 @@ def get_connection(
     )
 
     if not connection_doc:
-        raise ValueError(
-            f"No connected {provider} account found"
-        )
+        return None
+            
+        
 
     connection = connection_doc.to_dict()
 
