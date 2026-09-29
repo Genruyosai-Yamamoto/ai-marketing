@@ -19,6 +19,4 @@ def get_connector(action):
     if action_type == "website":
         return WebsiteConnector()
 
-    raise ValueError(
-        f"No connector available for action type: {action_type}"
-    )
+        return DryRunConnector()
