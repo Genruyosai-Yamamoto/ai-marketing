@@ -18,7 +18,7 @@
   - [Action Approval & Execution](#action-approval--execution)
   - [Connector Layer](#connector-layer)
   - [Measurements & Learning Loop](#measurements--learning-loop)
-  - [Social & Code Integrations](#social--code-integrations)
+  - [Social, SEO & Code Integrations](#social-seo--code-integrations)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [API Reference](#api-reference)
@@ -32,15 +32,16 @@
 
 ## Overview
 
-Blom is a **Flask-based AI backend** that acts as an autonomous growth-marketing agent for small businesses. A user registers their business, connects it to their website, GitHub account, and/or Instagram page, and the agent then:
+Blom is a **Flask-based AI backend** that acts as an autonomous growth-marketing agent for small businesses. A user registers their business, connects it to their website, GitHub account, Instagram page, and/or Google Search Console, and the agent then:
 
 1. **Observes** — scrapes the business website safely
-2. **Analyses** — uses an LLM to build a structured business profile from the scraped content
-3. **Identifies opportunities** — generates ranked, evidence-grounded growth opportunities
-4. **Plans actions** — converts each opportunity into a concrete, executable action plan
-5. **Requests approval** — every action requires explicit user sign-off before it runs
-6. **Executes** — writes files to GitHub, posts to Instagram, or updates web pages
-7. **Learns** — records measurements after execution and generates learnings that feed back into future decisions
+2. **Enriches** — pulls real search performance data from Google Search Console (if connected)
+3. **Analyses** — uses an LLM to build a structured business profile from the scraped content and search data
+4. **Identifies opportunities** — generates ranked, evidence-grounded growth opportunities
+5. **Plans actions** — converts each opportunity into a concrete, executable action plan
+6. **Requests approval** — every action requires explicit user sign-off before it runs
+7. **Executes** — writes files to GitHub, posts to Instagram, or updates web pages
+8. **Learns** — records measurements after execution and generates learnings that feed back into future decisions
 
 The entire pipeline is asynchronous, driven by [Celery](https://docs.celeryq.dev/) backed by Redis, with state persisted in Google Cloud Firestore.
 
@@ -56,7 +57,10 @@ The entire pipeline is asynchronous, driven by [Celery](https://docs.celeryq.dev
 │  │  auth.py │  │  user.py │  │ github_con. │  │ instagram_  │  │
 │  │ (web UI) │  │ (API)    │  │ (OAuth)     │  │ connections │  │
 │  └────┬─────┘  └────┬─────┘  └──────┬──────┘  └──────┬──────┘  │
-│       └─────────────┴───────────────┴─────────────────┘          │
+│       │              │               │                 │          │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │          search_console_connections.py (OAuth + API)      │   │
+│  └──────────────────────────┬───────────────────────────────┘   │
 │                              │                                    │
 │                    ┌─────────▼─────────┐                         │
 │                    │   Firebase Auth +  │                         │
@@ -69,6 +73,7 @@ The entire pipeline is asynchronous, driven by [Celery](https://docs.celeryq.dev
 │            │  analyze_business_website()          │                │
 │            │     ↓ website_analyzer.py           │                │
 │            │     ↓ agent/analyzer.py (LLM)       │                │
+│            │     ↓ GoogleSearchConsoleAPI (opt.) │                │
 │            │     ↓ agent/opportunity_generator   │                │
 │            │     ↓ agent/decision_engine (LLM)   │                │
 │            │     → Actions: pending_approval      │                │
@@ -96,14 +101,15 @@ The full autonomous cycle is triggered by a single API call: `POST /api/business
 |------|--------|-------------|
 | **1. Fetch** | `website_analyzer.fetch_website_html()` | SSRF-safe HTTP fetch with DNS pinning, redirect validation, and 2 MB cap |
 | **2. Parse** | `website_analyzer.analyze_html()` | Extracts title, meta description, headings (H1–H3), and up to 100 links |
-| **3. Profile** | `agent/analyzer.py` → Groq LLM | Builds a structured business profile (summary, audience, value prop, strengths/weaknesses) |
-| **4. Opportunities** | `agent/opportunity_generator.py` → Groq LLM | Generates 0–5 ranked, evidence-grounded growth opportunities with `problem_key`, impact, and confidence score |
-| **5. Validate** | `agent/opportunity_validation.py` | Schema validates and deduplicates opportunities before persisting |
-| **6. Decide** | `agent/decision_engine.py` → Groq LLM | Converts each opportunity into a concrete action plan, informed by historical learnings |
-| **7. Await approval** | Firestore + REST API | Actions stored as `pending_approval`; user must explicitly approve via `POST /api/business/<id>/actions/<id>/approve` |
-| **8. Execute** | `services/execution_engine.py` + Connectors | Runs the approved action through the appropriate connector |
-| **9. Measure** | `services/measurement_service.py` | Records success/failure metric against the execution |
-| **10. Learn** | `services/learning_service.py` → Groq LLM | Generates a structured learning from the measurement; stored for future decision cycles |
+| **3. Profile** | `agent/analyzer.py` → LLM | Builds a structured business profile (summary, audience, value prop, strengths/weaknesses) |
+| **4. Enrich** | `connectors/google_search_console.py` | Optionally enriches the business profile with 28-day search analytics (clicks, impressions, CTR, top queries, top pages) if a Search Console connection exists |
+| **5. Opportunities** | `agent/opportunity_generator.py` → LLM | Generates 0–5 ranked, evidence-grounded growth opportunities with `problem_key`, impact, and confidence score |
+| **6. Validate** | `agent/opportunity_validation.py` | Schema validates and deduplicates opportunities before persisting |
+| **7. Decide** | `agent/decision_engine.py` → LLM | Converts each opportunity into a concrete action plan, informed by historical learnings |
+| **8. Await approval** | Firestore + REST API | Actions stored as `pending_approval`; user must explicitly approve via `POST /api/business/<id>/actions/<id>/approve` |
+| **9. Execute** | `services/execution_engine.py` + Connectors | Runs the approved action through the appropriate connector |
+| **10. Measure** | `services/measurement_service.py` | Records success/failure metric against the execution |
+| **11. Learn** | `services/learning_service.py` → LLM | Generates a structured learning from the measurement; stored for future decision cycles |
 
 ---
 
@@ -126,12 +132,14 @@ Located in `routes/auth.py` and `routes/auth_api.py`:
 
 ### Business Management
 
-Routes in `routes/user.py`:
+Routes in `routes/user.py` and `routes/business_api.py`:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/` | GET | List all businesses owned by the authenticated user |
+| `/` | GET | List all businesses owned by the authenticated user (HTML) |
+| `/api/business` | GET | List all businesses (JSON API) |
 | `/api/business` | POST | Create a new business record |
+| `/api/business/<id>` | GET | Get a single business by ID |
 | `/api/business/<id>` | PATCH | Update business name, website, industry, description |
 | `/api/business/<id>` | DELETE | Delete a business (owner-only) |
 
@@ -160,7 +168,7 @@ Run status is tracked in `businesses/<id>/agent_runs/<run_id>` with fields: `sta
 
 ### Opportunity Generation
 
-`agent/opportunity_generator.py` calls Groq with the `OPPORTUNITY_GENERATION_SYSTEM_PROMPT` to identify up to 5 growth opportunities.
+`agent/opportunity_generator.py` calls the LLM with the `OPPORTUNITY_GENERATION_SYSTEM_PROMPT` to identify up to 5 growth opportunities. When Google Search Console data is available it is included in the analysis context, enabling search-performance-grounded opportunities (e.g. low CTR on high-impression queries).
 
 Each opportunity has:
 ```json
@@ -187,7 +195,7 @@ Each opportunity has:
 `agent/decision_engine.py` converts each validated opportunity into one concrete proposed action.
 
 The model is given:
-1. The full business analysis
+1. The full business analysis (including any Search Console data)
 2. The opportunity details
 3. Up to 20 recent historical learnings (filtered by `learning_type: marketing`)
 
@@ -243,7 +251,7 @@ After every successful execution:
 
 1. `measurement_service.record_measurement()` creates a document in `businesses/<id>/measurements/` with `metric: execution_success`, `value: 1`, `source: execution_engine`.
 
-2. `learning_service.create_learning_from_measurement()` calls `agent/learning_generator.py` (Groq LLM) to synthesise a structured learning:
+2. `learning_service.create_learning_from_measurement()` calls `agent/learning_generator.py` (LLM) to synthesise a structured learning:
    ```json
    {
      "observation": "string",
@@ -262,7 +270,7 @@ After every successful execution:
 
 ---
 
-### Social & Code Integrations
+### Social, SEO & Code Integrations
 
 #### GitHub OAuth
 Routes in `routes/github_connections.py`:
@@ -287,6 +295,19 @@ Routes in `routes/instagram_connections.py`:
 
 Required scopes: `instagram_business_basic`, `instagram_business_content_publish`.
 
+#### Google Search Console OAuth
+Routes in `routes/search_console_connections.py`:
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/connections/search-console/connect?business_id=` | Initiates PKCE OAuth flow; redirects to Google |
+| `GET /api/connections/search-console/callback` | Exchanges authorisation code for credentials (requires refresh token), verifies Search Console access, stores connection |
+| `GET /api/connections/search-console/properties?business_id=` | Lists all Search Console properties accessible to the connected account |
+| `POST /api/connections/search-console/select-property` | Selects a property (`site_url`) to use for analytics enrichment |
+| `GET /api/connections/search-console/analytics?business_id=` | Returns 28-day search performance totals, top 25 queries, and top 25 pages for the selected property |
+
+Required scope: `https://www.googleapis.com/auth/webmasters.readonly`. The connector (`connectors/google_search_console.py`) uses the Google Search Console API v1 and automatically refreshes expired tokens. Search Console data is enriched into the business analysis profile during every agent run.
+
 ---
 
 ## Tech Stack
@@ -298,8 +319,9 @@ Required scopes: `instagram_business_basic`, `instagram_business_content_publish
 | **Auth Provider** | Firebase Admin SDK |
 | **Task Queue** | Celery 5.6 |
 | **Broker / Cache** | Redis 8 |
-| **LLM Provider** | Groq API (Llama 3.3 70B / configurable model) |
+| **LLM Provider** | Groq API / configurable (default model: `openai/gpt-oss-20b`) |
 | **HTML Parsing** | BeautifulSoup4 |
+| **Search Console** | Google Search Console API v1 (`google-api-python-client`) |
 | **Token Encryption** | Python `cryptography` (Fernet) |
 | **Password Hashing** | Werkzeug (`pbkdf2:sha256`) |
 | **HTTP Client** | `requests` |
@@ -324,20 +346,22 @@ backend/
 ├── website_analyzer.py           # SSRF-safe HTTP fetcher + HTML parser
 │
 ├── agent/                        # LLM agent modules
-│   ├── analyzer.py               # Website observation → business profile (Groq)
-│   ├── opportunity_generator.py  # Business profile → growth opportunities (Groq)
+│   ├── analyzer.py               # Website observation → business profile (LLM)
+│   ├── opportunity_generator.py  # Business profile → growth opportunities (LLM)
 │   ├── opportunity_validation.py # Schema validation + deduplication
-│   ├── decision_engine.py        # Opportunity → concrete action plan (Groq)
-│   ├── learning_generator.py     # Measurement → structured learning (Groq)
+│   ├── decision_engine.py        # Opportunity → concrete action plan (LLM)
+│   ├── learning_generator.py     # Measurement → structured learning (LLM)
 │   └── prompts.py                # All LLM system + user prompt templates
 │
 ├── routes/                       # Flask blueprints
 │   ├── auth.py                   # HTML-rendered auth (login, register, logout)
 │   ├── auth_api.py               # JSON API auth (/api/auth/*)
-│   ├── user.py                   # Business CRUD + agent run management
+│   ├── user.py                   # Business CRUD + agent run management + action approval
+│   ├── business_api.py           # Business list/get JSON API
 │   ├── github_connections.py     # GitHub OAuth + repo management
 │   ├── instagram_connections.py  # Instagram OAuth + status
-│   └── business_api.py           # Business-level API helpers
+│   ├── search_console_connections.py  # Google Search Console OAuth + analytics
+│   └── home.py                   # Home/landing routes
 │
 ├── services/                     # Business logic layer
 │   ├── execution_engine.py       # Action execution orchestrator
@@ -347,7 +371,7 @@ backend/
 │   ├── action_generation_service.py  # Action generation helpers
 │   ├── measurement_service.py    # Record execution measurements
 │   ├── learning_service.py       # Create learnings from measurements
-│   ├── connection_service.py     # Manage provider connections (GitHub, Instagram)
+│   ├── connection_service.py     # Manage provider connections (GitHub, Instagram, Search Console)
 │   ├── instagram_service.py      # Instagram API helpers
 │   └── token_encryption.py      # Fernet-based token encryption for stored credentials
 │
@@ -356,19 +380,21 @@ backend/
 │   ├── base.py                   # BaseConnector abstract class
 │   ├── github.py                 # GitHub: branch + file update
 │   ├── github_api.py             # Raw GitHub REST API wrapper
+│   ├── google_search_console.py  # Google Search Console API wrapper (read-only)
 │   ├── instagram.py              # Instagram connector
 │   ├── instagram_api.py          # Raw Instagram Graph API wrapper
 │   ├── website.py                # Website page update connector
 │   ├── website_api.py            # Website API wrapper
+│   ├── test_actions.py           # Test action helpers
 │   └── dry_run.py                # No-op test connector
 │
 ├── config/
 │   └── instagram.py              # Instagram OAuth config + validation
 │
 ├── templates/                    # Jinja2 HTML templates
-├── static/                       # Frontend SPA assets
+├── static/                       # Frontend SPA assets (index.html, js/app.js, js/api.js)
 ├── tests/                        # Test suite
-├── scripts/                      # Utility scripts
+├── scripts/                      # Utility scripts (e2e flows, live pipeline testing)
 ├── requirements.txt
 └── .env                          # Environment configuration (never commit)
 ```
@@ -394,7 +420,9 @@ backend/
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET`  | `/` | session | List user's businesses (HTML) |
+| `GET`  | `/api/business` | session | List user's businesses (JSON) |
 | `POST` | `/api/business` | session | Create business |
+| `GET`  | `/api/business/<id>` | session | Get single business |
 | `PATCH`| `/api/business/<id>` | session | Update business |
 | `DELETE`| `/api/business/<id>` | session | Delete business |
 
@@ -448,6 +476,11 @@ backend/
 | `GET`  | `/api/connections/instagram` | session | Start Instagram OAuth |
 | `GET`  | `/api/connections/instagram/callback` | session | Instagram OAuth callback |
 | `GET`  | `/api/connections/instagram/status` | session | Check Instagram connection status |
+| `GET`  | `/api/connections/search-console/connect` | session | Start Google Search Console OAuth (PKCE) |
+| `GET`  | `/api/connections/search-console/callback` | session | Google OAuth callback |
+| `GET`  | `/api/connections/search-console/properties` | session | List accessible Search Console properties |
+| `POST` | `/api/connections/search-console/select-property` | session | Set active Search Console property |
+| `GET`  | `/api/connections/search-console/analytics` | session | Fetch 28-day search analytics for selected property |
 
 ---
 
@@ -458,9 +491,10 @@ backend/
 - Python 3.11+
 - Redis (running on `localhost:6379`)
 - A Firebase project with Firestore enabled and a service account key
-- A Groq API key
+- A Groq API key (or any OpenAI-compatible endpoint — set `GROQ_MODEL` accordingly)
 - (Optional) GitHub OAuth App credentials
 - (Optional) Instagram App credentials
+- (Optional) Google Cloud OAuth 2.0 credentials with Search Console API enabled
 
 ### Installation
 
@@ -508,8 +542,8 @@ gunicorn -w 4 -b 0.0.0.0:8000 "app:app"
 |----------|----------|-------------|
 | `SECRET_KEY` | ✅ | Flask session secret — use a long random string in production |
 | `FIREBASE_CREDENTIALS` | ✅ | Absolute path to Firebase service account JSON |
-| `GROQ_API_KEY` | ✅ | Groq API key for LLM calls |
-| `GROQ_MODEL` | — | Groq model ID (default: `llama-3.3-70b-versatile`) |
+| `GROQ_API_KEY` | ✅ | API key for the LLM provider |
+| `GROQ_MODEL` | — | LLM model ID (default: `llama-3.3-70b-versatile`; supports any OpenAI-compatible model string) |
 | `REDIS_URL` | — | Redis connection URL (default: `redis://localhost:6379/0`) |
 | `TOKEN_ENCRYPTION_KEY` | ✅ | Fernet key for encrypting OAuth access tokens at rest |
 | `DEBUG` | — | `True` / `False` (default `True`; set `False` in production) |
@@ -524,6 +558,9 @@ gunicorn -w 4 -b 0.0.0.0:8000 "app:app"
 | `INSTAGRAM_OAUTH_TOKEN_URL` | — | Instagram token endpoint |
 | `INSTAGRAM_API_BASE_URL` | — | Instagram Graph API base URL |
 | `INSTAGRAM_OAUTH_SCOPES` | — | Required scopes (e.g. `instagram_business_basic instagram_business_content_publish`) |
+| `GOOGLE_SEARCH_CONSOLE_CLIENT_ID` | — | Google OAuth 2.0 client ID (Web application type) |
+| `GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET` | — | Google OAuth 2.0 client secret |
+| `GOOGLE_SEARCH_CONSOLE_REDIRECT_URI` | — | Google OAuth callback URL (e.g. `http://localhost:5000/api/connections/search-console/callback`) |
 
 > ⚠️ **Never commit `.env` or the Firebase service account JSON to version control.**
 
@@ -538,7 +575,8 @@ gunicorn -w 4 -b 0.0.0.0:8000 "app:app"
 | Brute force | Redis-backed IP lockout (5 attempts → 15 min lockout), registration throttle (3/hour/IP), in-memory fallback |
 | CSRF | One-time HMAC token on login form, constant-time comparison |
 | Session hijacking | Session token stored in Firestore; new token on every login invalidates previous sessions; `HttpOnly`, `SameSite=Lax` cookies |
-| OAuth state forgery | `secrets.compare_digest` validation of OAuth state parameter |
+| OAuth state forgery | `secrets.compare_digest` validation of OAuth state parameter on all three providers (GitHub, Instagram, Google) |
+| PKCE | Google Search Console OAuth uses PKCE code verifier to prevent authorisation code interception |
 | Destructive GitHub writes | Line count and deletion-ratio safety checks before any file update |
 | Path traversal | GitHub `target_path` validated: no leading `/`, no `..` components |
 | Token exposure | OAuth access tokens encrypted at rest with Fernet (`TOKEN_ENCRYPTION_KEY`) |
@@ -552,7 +590,7 @@ gunicorn -w 4 -b 0.0.0.0:8000 "app:app"
 The Celery application (`task.py`) defines three tasks:
 
 | Task | Name | Trigger |
-|------|------|---------|
+|------|------|---------| 
 | `analyze_business_website` | `tasks.analyze_business_website` | `POST /api/business/<id>/analyze` |
 | `execute_approved_action` | `tasks.execute_approved_action` | `POST /api/business/<id>/actions/<id>/approve` |
 | `run_agent_cycle` | `tasks.run_agent_cycle` | Internal orchestration |
@@ -582,7 +620,7 @@ businesses/{business_id}
   │   └── status, analysis_status, observation_id, opportunity_ids, task_id, timestamps
   │
   ├── observations/{obs_id}
-  │   └── source_url, final_url, analysis{title, headings, links, meta_description}, created_at
+  │   └── source_url, final_url, analysis{title, headings, links, meta_description, search_console{}}, created_at
   │
   ├── opportunities/{opp_id}
   │   └── title, description, problem_key, evidence[], potential_impact, confidence, type
@@ -601,7 +639,9 @@ businesses/{business_id}
   │   └── observation, outcome, learning, confidence, learning_type, direction, measurement_id
   │
   └── connections/{connection_id}
-      └── provider (github|instagram), access_token (Fernet-encrypted), repository, status
+      └── provider (github|instagram|google_search_console)
+          access_token (Fernet-encrypted), refresh_token, token_expires_at
+          repository / site_id (selected property), status
 
 security_logs/{log_id}
   └── type (device_mismatch), device_id, user_id, ip, timestamp
@@ -609,4 +649,4 @@ security_logs/{log_id}
 
 ---
 
-*Built with Flask · Celery · Firestore · Redis · Groq*
+*Built with Flask · Celery · Firestore · Redis · Groq · Google Search Console API*
