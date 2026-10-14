@@ -111,7 +111,82 @@ def analyze_business_website(self, business_id, user_id, run_id):
         try:
             analysis = analyze_observation(observation)
 
+            from services.connection_service import get_connection
+            from connectors.google_search_console import GoogleSearchConsoleAPI
+            from datetime import date, timedelta
+
+            try:
+                connection = get_connection(
+                    business_id=business_id,
+                    user_id=user_id,
+                    provider="google_search_console",
+                )
+
+                if connection and connection.get("site_id") and connection.get("refresh_token"):
+                    google = GoogleSearchConsoleAPI.from_refresh_token(
+                        refresh_token=connection["refresh_token"],
+                        access_token=connection.get("access_token"),
+                        token_expiry=connection.get("token_expires_at"),
+                    )
+
+                    # Search Console data is delayed, so use a completed date range.
+                    end_date = date.today() - timedelta(days=3)
+                    start_date = end_date - timedelta(days=27)
+
+                    search_rows = google.get_search_analytics(
+                        site_url=connection["site_id"],
+                        start_date=start_date.isoformat(),
+                        end_date=end_date.isoformat(),
+                    )
+
+                    query_rows = google.get_search_analytics(
+                        site_url=connection["site_id"],
+                        start_date=start_date.isoformat(),
+                        end_date=end_date.isoformat(),
+                        dimensions=["query"],
+                        row_limit=25,
+                    )
+
+                    page_rows = google.get_search_analytics(
+                        site_url=connection["site_id"],
+                        start_date=start_date.isoformat(),
+                        end_date=end_date.isoformat(),
+                        dimensions=["page"],
+                        row_limit=25,
+                    )
+
+                    totals = search_rows[0] if search_rows else {}
+
+                    analysis["search_console"] = {
+                        "site_url": connection["site_id"],
+                        "start_date": start_date.isoformat(),
+                        "end_date": end_date.isoformat(),
+                        "has_data": bool(search_rows and (
+                            totals.get("clicks", 0) or totals.get("impressions", 0)
+                        )),
+                        "totals": {
+                            "clicks": totals.get("clicks", 0),
+                            "impressions": totals.get("impressions", 0),
+                            "ctr": totals.get("ctr", 0),
+                            "position": totals.get("position", 0),
+                        },
+                        "top_queries": query_rows,
+                        "top_pages": page_rows,
+                    }
+
+            except Exception as exc:
+                # Preserve the existing website-analysis pipeline if this optional
+                # integration is temporarily unavailable.
+                print(f"Search Console enrichment skipped: {exc}")
+
+            print(
+                "SEARCH CONSOLE DATA:",
+                analysis.get("search_console", "NOT ATTACHED"),
+                flush=True,
+            )
+            
             opportunities = generate_opportunities(analysis)
+            
 
             opportunity_ids = []
 
