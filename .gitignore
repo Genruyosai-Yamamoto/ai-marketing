@@ -49,3 +49,4 @@ hello.txt
 
 # Firebase service-account keys — never commit
 ai-agent-*-firebase-adminsdk-*.json
+client_secret_*.json

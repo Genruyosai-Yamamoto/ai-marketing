@@ -29,13 +29,13 @@ def create_connection(
 
     now = datetime.utcnow().isoformat()
 
-    if "access_token" in connection_data:
-        connection_data = {
-            **connection_data,
-            "access_token": encrypt_token(
-                connection_data["access_token"]
-            ),
-        }
+    
+    for token_field in ("access_token", "refresh_token"):
+        if connection_data.get(token_field):
+            connection_data[token_field] = encrypt_token(
+                connection_data[token_field]
+            )
+
 
     connection = {
         "provider": provider,
@@ -144,6 +144,7 @@ def get_connection(
         "account_id": connection.get(
             "account_id"
         ),
+        
         "username": connection.get(
             "username"
         ),
@@ -160,6 +161,12 @@ def get_connection(
             "default_branch"
         ),
         "access_token": access_token,
+        
+        "refresh_token": (
+            decrypt_token(connection["refresh_token"])
+            if connection.get("refresh_token")
+            else None
+        ),
     }
     
 def create_github_connection(

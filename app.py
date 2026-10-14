@@ -12,6 +12,9 @@ from routes.user import user_bp
 from routes.instagram_connections import instagram_connections_bp
 from routes.auth_api import api_auth_bp
 from routes.github_connections import github_connections_bp
+from routes.search_console_connections import (
+    search_console_connections_bp,
+)
 from routes.business_api import business_api_bp
 # from routes.payment import payment_bp
 from datetime import timedelta
@@ -49,6 +52,7 @@ app.register_blueprint(user_bp)
 app.register_blueprint(instagram_connections_bp)
 app.register_blueprint(api_auth_bp)
 app.register_blueprint(github_connections_bp)
+app.register_blueprint(search_console_connections_bp)
 app.register_blueprint(business_api_bp)
 # app.register_blueprint(payment_bp)
 
