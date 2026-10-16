@@ -158,13 +158,13 @@ curl -s -b "$COOKIE_JAR" -X POST "$BASE/api/connections/search-console/select-pr
 
 | Step | Result | Notes |
 |---|---|---|
-| 1 — Auth | ☐ Pass / ☐ Fail | |
-| 2 — Initiate OAuth | ☐ Pass / ☐ Fail | |
-| 3 — Browser approval | ☐ Pass / ☐ Fail | |
-| 4 — List properties | ☐ Pass / ☐ Fail | |
-| 5 — Select property | ☐ Pass / ☐ Fail | |
-| 6 — Analytics | ☐ Pass / ☐ Fail | |
-| 7 — Add property | ☐ Pass / ☐ Fail | |
-| A — Reconnect fallback | ☐ Pass / ☐ Fail | |
-| B — Unowned property 403 | ☐ Pass / ☐ Fail | |
-| C — No property selected 400 | ☐ Pass / ☐ Fail | |
+| 1 — Auth | ☑ Pass | Authenticated as camadi317@gmail.com |
+| 2 — Initiate OAuth | ☑ Pass | Generated PKCE authorization_url |
+| 3 — Browser approval | ☑ Pass | Connected conn ID q9mfAohw4UPe2MqznxZE |
+| 4 — List properties | ☑ Pass | Found https://logbook-ai.onrender.com/ (siteOwner) |
+| 5 — Select property | ☑ Pass | Selected https://logbook-ai.onrender.com/ |
+| 6 — Analytics | ☑ Pass | Successfully pulled metrics via GSC v1 API |
+| 7 — Add property | ☑ Pass | Verified already available handling (200) |
+| A — Reconnect fallback | ☑ Pass | Incremental scope handled without issue |
+| B — Unowned property 403 | ☑ Pass | Returns 403 when property not in account |
+| C — No property selected 400 | ☑ Pass | Missing parameter rejected with 400 |
