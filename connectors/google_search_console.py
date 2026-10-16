@@ -69,11 +69,11 @@ class GoogleSearchConsoleAPI:
 
     @staticmethod
     def exchange_code_for_credentials(code, state, code_verifier):
+        os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
         flow = GoogleSearchConsoleAPI.create_oauth_flow(state=state)
         flow.code_verifier = code_verifier
         token_response = flow.fetch_token(code=code)
         credentials = flow.credentials
-
 
         return credentials
 
