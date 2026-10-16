@@ -32,7 +32,7 @@ if not app.secret_key:
         "SECRET_KEY environment variable is missing"
     )
 
-app.config["DEBUG"] = os.getenv("DEBUG", "True").lower() == "true"
+app.config["DEBUG"] = os.getenv("DEBUG", "False").lower() == "true"
 
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 

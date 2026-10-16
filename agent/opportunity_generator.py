@@ -32,7 +32,7 @@ Business understanding:
 
 {json.dumps(business_analysis, indent=2, ensure_ascii=False)}
 
-Return a JSON array containing opportunities.
+Return one JSON object with an "opportunities" array containing 0 to 5 opportunities. Follow the required schema exactly.
 """
 
     response = client.chat.completions.create(

@@ -1,11 +1,17 @@
 import secrets
 from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request, session, current_app
-from services.connection_service import create_connection
-
+from services.connection_service import (
+    create_connection,
+    upsert_google_search_console_connection,
+    get_connection,
+)
+from googleapiclient.errors import HttpError
 from firebase import db
-from connectors.google_search_console import GoogleSearchConsoleAPI
-
+from connectors.google_search_console import (
+    GoogleSearchConsoleAPI,
+    GOOGLE_SEARCH_CONSOLE_SCOPE,
+)
 
 search_console_connections_bp = Blueprint(
     "search_console_connections",
@@ -172,18 +178,34 @@ def search_console_callback():
 
 
         if not credentials.refresh_token:
-            return jsonify({
-                "success": False,
-                "error": (
-                    "Google did not return a refresh token. "
-                    "Revoke Blom's existing Google access and "
-                    "try connecting again."
-                ),
-            }), 400
+            try:
+                existing_connection = get_connection(
+                    business_id=business_id,
+                    user_id=user_id,
+                    provider="google_search_console",
+                )
+            except (PermissionError, ValueError):
+                existing_connection = None
+
+            if not (
+                existing_connection
+                and existing_connection.get("refresh_token")
+            ):
+                return jsonify({
+                    "success": False,
+                    "error": (
+                        "Google did not return a refresh token. "
+                        "Please revoke Blom's existing Google access "
+                        "and connect again."
+                    ),
+                }), 400
+
+            credentials.refresh_token = existing_connection["refresh_token"]
 
         # Verify that the credentials can access Search Console
         # before saving the connection.
         google = GoogleSearchConsoleAPI(credentials)
+
         sites = google.list_sites()
 
         connection_data = {
@@ -195,14 +217,13 @@ def search_console_callback():
                 if credentials.expiry
                 else None
             ),
-            "granted_scopes": credentials.scopes or [],
+            "requested_scopes": [GOOGLE_SEARCH_CONSOLE_SCOPE],
             "properties_count": len(sites),
         }
 
-        connection = create_connection(
+        connection = upsert_google_search_console_connection(
             business_id=business_id,
             user_id=user_id,
-            provider="google_search_console",
             connection_data=connection_data,
         )
 
@@ -256,7 +277,13 @@ def search_console_properties():
             user_id=user_id,
             provider="google_search_console",
         )
-
+        
+        if not connection:
+            return jsonify({
+                "success": False,
+                "error": "Google Search Console is not connected",
+            }), 404
+            
         google = GoogleSearchConsoleAPI.from_refresh_token(
             refresh_token=connection["refresh_token"],
             access_token=connection.get("access_token"),
@@ -295,6 +322,185 @@ def search_console_properties():
         }), 500
         
 @search_console_connections_bp.route(
+    "/api/connections/search-console/add-property",
+    methods=["POST"],
+)
+def add_search_console_property():
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return jsonify({
+            "success": False,
+            "error": "Authentication required",
+        }), 401
+
+    data = request.get_json(silent=True) or {}
+    business_id = data.get("business_id")
+    site_url = data.get("site_url")
+
+    if not isinstance(business_id, str) or not business_id.strip():
+        return jsonify({
+            "success": False,
+            "error": "Missing business_id",
+        }), 400
+
+    if not isinstance(site_url, str) or not site_url.strip():
+        return jsonify({
+            "success": False,
+            "error": "Missing site_url",
+        }), 400
+
+    site_url = site_url.strip()
+
+    # Accept a Search Console domain property or an HTTP(S) URL-prefix property.
+    from urllib.parse import urlparse
+
+    
+    if site_url.startswith("sc-domain:"):
+        domain = site_url[len("sc-domain:"):].strip()
+        labels = domain.split(".")
+
+        if (
+            not domain
+            or len(labels) < 2
+            or any(
+                not label
+                or len(label) > 63
+                or not label[0].isalnum()
+                or not label[-1].isalnum()
+                or any(
+                    not (char.isalnum() or char == "-")
+                    for char in label
+                )
+                for label in labels
+            )
+            or len(domain) > 253
+        ):
+            return jsonify({
+                "success": False,
+                "error": "Invalid Search Console domain property",
+            }), 400
+
+    
+    else:
+        parsed = urlparse(site_url)
+
+        try:
+            hostname = parsed.hostname
+            valid_port = parsed.port is None or 1 <= parsed.port <= 65535
+        except ValueError:
+            hostname = None
+            valid_port = False
+
+        if (
+            parsed.scheme not in ("http", "https")
+            or not hostname
+            or not valid_port
+            or parsed.username
+            or parsed.password
+            or parsed.fragment
+            or "." not in hostname
+            or any(char.isspace() for char in site_url)
+        ):
+            return jsonify({
+                "success": False,
+                "error": (
+                    "Use a valid HTTP(S) website URL or a "
+                    "sc-domain:example.com property"
+                ),
+            }), 400
+
+
+    try:
+        connection = get_connection(
+            business_id=business_id,
+            user_id=user_id,
+            provider="google_search_console",
+        )
+
+        if not connection:
+            return jsonify({
+                "success": False,
+                "error": "Connect Google Search Console before adding a property",
+            }), 400
+
+        google = GoogleSearchConsoleAPI.from_refresh_token(
+            refresh_token=connection["refresh_token"],
+            access_token=connection.get("access_token"),
+            token_expiry=connection.get("token_expires_at"),
+        )
+
+        existing_sites = google.list_sites()
+        if any(site.get("siteUrl") == site_url for site in existing_sites):
+            return jsonify({
+                "success": True,
+                "message": "This property is already available to the connected Google account",
+                "site_url": site_url,
+                "verification_status": "not_verified_by_blom",
+            }), 200
+
+        google.add_site(site_url)
+
+        return jsonify({
+            "success": True,
+            "message": (
+                "Property-add request accepted by Google. "
+                "Website ownership may still need verification."
+            ),
+            "site_url": site_url,
+            "verification_status": "verification_required",
+        }), 201
+    
+    except HttpError as exc:
+        status_code = getattr(exc.resp, "status", None)
+
+        if status_code == 403:
+            return jsonify({
+                "success": False,
+                "error": (
+                    "Google refused the property-add request. Check that "
+                    "the connected Google account has sufficient access "
+                    "and that Search Console permissions allow this action. "
+                    "If the connection uses an older read-only grant, "
+                    "reconnect and approve the requested webmasters scope."
+                ),
+                "reconnect_required": True,
+            }), 403
+
+        current_app.logger.exception(
+            "Google Search Console property-add API request failed"
+        )
+        return jsonify({
+            "success": False,
+            "error": "Google Search Console could not add this property",
+        }), 502
+
+    except PermissionError as exc:
+        return jsonify({
+            "success": False,
+            "error": str(exc),
+        }), 403
+
+    except ValueError as exc:
+        return jsonify({
+            "success": False,
+            "error": str(exc),
+        }), 404
+
+    except Exception:
+        current_app.logger.exception(
+            "Failed to add Search Console property"
+        )
+        return jsonify({
+            "success": False,
+            "error": (
+                "Google could not add the property. "
+                "Reconnect Search Console with the requested permissions "
+                "if access was denied, then try again."
+            ),
+        }), 502
+        
+@search_console_connections_bp.route(
     "/api/connections/search-console/select-property",
     methods=["POST"],
 )
@@ -325,6 +531,12 @@ def select_search_console_property():
             user_id=user_id,
             provider="google_search_console",
         )
+        
+        if not connection:
+            return jsonify({
+                "success": False,
+                "error": "Google Search Console is not connected",
+            }), 404
 
         google = GoogleSearchConsoleAPI.from_refresh_token(
             refresh_token=connection["refresh_token"],
@@ -415,6 +627,12 @@ def search_console_analytics():
             provider="google_search_console",
         )
 
+        if not connection:
+            return jsonify({
+                "success": False,
+                "error": "Google Search Console is not connected",
+            }), 404
+            
         site_url = connection.get("site_id")
         if not site_url:
             return jsonify({
