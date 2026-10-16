@@ -58,6 +58,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.2.3
 redis==8.1.0
 requests==2.34.2
+responses==0.25.3
 six==1.17.0
 soupsieve==2.9.2
 SQLAlchemy==2.0.53
