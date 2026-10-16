@@ -25,7 +25,15 @@ def _make_api(mock_service=None):
 # ── OAuth flow ─────────────────────────────────────────────────────────────
 
 def test_create_oauth_flow_builds_correct_config():
-    with patch("connectors.google_search_console.Flow") as mock_flow_class:
+    env_overrides = {
+        "GOOGLE_SEARCH_CONSOLE_CLIENT_ID": "test-client-id",
+        "GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET": "test-client-secret",
+        "GOOGLE_SEARCH_CONSOLE_REDIRECT_URI": (
+            "http://localhost:5000/api/connections/search-console/callback"
+        ),
+    }
+    with patch("connectors.google_search_console.Flow") as mock_flow_class, \
+         patch.dict("os.environ", env_overrides):
         mock_instance = MagicMock()
         mock_flow_class.from_client_config.return_value = mock_instance
 
