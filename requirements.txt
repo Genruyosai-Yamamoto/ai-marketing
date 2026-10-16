@@ -46,6 +46,7 @@ MarkupSafe==3.0.3
 msgpack==1.2.2
 opentelemetry-api==1.44.0
 packaging==26.3
+playwright==1.49.1
 prompt_toolkit==3.0.53
 proto-plus==1.28.4
 protobuf==7.36.1
@@ -58,6 +59,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.2.3
 redis==8.1.0
 requests==2.34.2
+responses==0.25.3
 six==1.17.0
 soupsieve==2.9.2
 SQLAlchemy==2.0.53

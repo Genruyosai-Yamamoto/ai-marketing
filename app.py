@@ -16,6 +16,7 @@ from routes.search_console_connections import (
     search_console_connections_bp,
 )
 from routes.business_api import business_api_bp
+from routes.gtm_routes import gtm_bp
 # from routes.payment import payment_bp
 from datetime import timedelta
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -32,7 +33,7 @@ if not app.secret_key:
         "SECRET_KEY environment variable is missing"
     )
 
-app.config["DEBUG"] = os.getenv("DEBUG", "True").lower() == "true"
+app.config["DEBUG"] = os.getenv("DEBUG", "False").lower() == "true"
 
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
@@ -54,6 +55,7 @@ app.register_blueprint(api_auth_bp)
 app.register_blueprint(github_connections_bp)
 app.register_blueprint(search_console_connections_bp)
 app.register_blueprint(business_api_bp)
+app.register_blueprint(gtm_bp)
 # app.register_blueprint(payment_bp)
 
 

@@ -9,7 +9,7 @@ from googleapiclient.discovery import build
 
 
 GOOGLE_SEARCH_CONSOLE_SCOPE = (
-    "https://www.googleapis.com/auth/webmasters.readonly"
+    "https://www.googleapis.com/auth/webmasters"
 )
 
 class GoogleSearchConsoleAPI:
@@ -69,10 +69,13 @@ class GoogleSearchConsoleAPI:
 
     @staticmethod
     def exchange_code_for_credentials(code, state, code_verifier):
+        os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
         flow = GoogleSearchConsoleAPI.create_oauth_flow(state=state)
         flow.code_verifier = code_verifier
-        flow.fetch_token(code=code)
-        return flow.credentials
+        token_response = flow.fetch_token(code=code)
+        credentials = flow.credentials
+
+        return credentials
 
 
 
@@ -114,6 +117,15 @@ class GoogleSearchConsoleAPI:
     def list_sites(self):
         response = self.service.sites().list().execute()
         return response.get("siteEntry", [])
+    
+    def add_site(self, site_url):
+        """Add a site property to the authenticated Search Console account."""
+        self.service.sites().add(siteUrl=site_url).execute()
+        return {
+            "site_url": site_url,
+            "status": "added",
+            "verification_status": "not_verified",
+        }
     
     def get_search_analytics(
         self,

@@ -194,3 +194,70 @@ def create_github_connection(
             **connection_data,
         },
     )
+    
+def upsert_google_search_console_connection(
+    business_id,
+    user_id,
+    connection_data,
+):
+    """Create or update this business's Google Search Console connection."""
+    business_ref = (
+        db.collection("businesses")
+        .document(business_id)
+    )
+    business_doc = business_ref.get()
+
+    if not business_doc.exists:
+        raise ValueError("Business not found")
+
+    if business_doc.to_dict().get("owner_id") != user_id:
+        raise PermissionError(
+            "You do not have permission to modify this business"
+        )
+
+    connections = (
+        business_ref.collection("connections")
+        .where("provider", "==", "google_search_console")
+        .where("status", "==", "connected")
+        .order_by("updated_at", direction="DESCENDING")
+        .limit(1)
+        .stream()
+    )
+    existing_doc = next(iter(connections), None)
+
+    now = datetime.utcnow().isoformat()
+    data = dict(connection_data)
+
+    # Preserve the existing refresh token if Google did not issue a new one.
+    if existing_doc and not data.get("refresh_token"):
+        existing_data = existing_doc.to_dict()
+        if existing_data.get("refresh_token"):
+            data.pop("refresh_token", None)
+
+    for token_field in ("access_token", "refresh_token"):
+        if data.get(token_field):
+            data[token_field] = encrypt_token(data[token_field])
+
+    if existing_doc:
+        data.update({
+            "provider": "google_search_console",
+            "status": "connected",
+            "updated_at": now,
+        })
+        existing_doc.reference.update(data)
+        return {
+            "id": existing_doc.id,
+            **existing_doc.to_dict(),
+            **data,
+        }
+
+    data.update({
+        "provider": "google_search_console",
+        "status": "connected",
+        "created_at": now,
+        "updated_at": now,
+    })
+    connection_ref = business_ref.collection("connections").document()
+    connection_ref.set(data)
+
+    return {"id": connection_ref.id, **data}

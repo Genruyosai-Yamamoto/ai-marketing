@@ -286,3 +286,138 @@ def run_agent_cycle(self, business_id, user_id, run_id):
             "completed_at": datetime.utcnow().isoformat(),
         })
         raise
+
+
+@celery.task(bind=True, name="tasks.run_gtm_analysis")
+def run_gtm_analysis(self, business_id, user_id, run_id):
+    """
+    Asynchronous Visual GTM Analysis Task.
+
+    Coordinates:
+    1. PixelRAG user website vertical page capture & tiling.
+    2. Competitor discovery via GSC organic queries.
+    3. PixelRAG competitor page capture.
+    4. Vision LLM evaluation across 4 GTM pillars.
+    5. Persistence of structured GTM opportunities and executive dossier.
+    """
+    run_ref = (
+        db.collection("businesses")
+        .document(business_id)
+        .collection("gtm_runs")
+        .document(run_id)
+    )
+
+    now = datetime.utcnow().isoformat()
+    run_ref.update({
+        "status": "running",
+        "started_at": now,
+    })
+
+    try:
+        from services.pixelrag_service import render_and_tile_page
+        from services.gtm_discovery_service import (
+            discover_competitors,
+            get_gtm_seed_queries,
+        )
+        from agent.gtm_engine import analyze_gtm_tiles
+        from services.gtm_dossier_service import (
+            generate_gtm_dossier_markdown,
+            save_dossier_to_file,
+        )
+        from services.opportunity_service import create_opportunity
+
+        # 1. Fetch business doc
+        business_ref = db.collection("businesses").document(business_id)
+        business_doc = business_ref.get()
+        if not business_doc.exists:
+            raise ValueError("Business not found")
+        business_data = business_doc.to_dict() or {}
+        website_url = business_data.get("website_url")
+        if not website_url:
+            raise ValueError("Business has no website_url configured")
+
+        tiles_base_dir = f"static/tiles/{business_id}/{run_id}"
+
+        # 2. Tile User Website
+        user_tiles_dir = f"{tiles_base_dir}/user_site"
+        user_manifest = render_and_tile_page(website_url, user_tiles_dir)
+
+        # 3. Discover Competitors & Tile
+        competitors = discover_competitors(business_id, user_id, max_competitors=2)
+        competitor_manifests = []
+        for idx, comp in enumerate(competitors, start=1):
+            comp_url = comp.get("url")
+            if comp_url:
+                try:
+                    comp_dir = f"{tiles_base_dir}/comp_{idx}"
+                    comp_manifest = render_and_tile_page(comp_url, comp_dir)
+                    comp["manifest"] = comp_manifest
+                    competitor_manifests.append(comp_manifest)
+                except Exception as exc:
+                    pass
+
+        # 4. Pull Seed Queries & Evaluate via Vision LLM
+        seed_queries = get_gtm_seed_queries(business_id, user_id)
+        analysis_result = analyze_gtm_tiles(
+            user_manifest=user_manifest,
+            competitor_manifests=competitor_manifests,
+            search_queries=seed_queries,
+        )
+
+        gtm_scores = analysis_result.get("gtm_scores", {})
+        blind_spots = analysis_result.get("blind_spots", [])
+        opportunities_data = analysis_result.get("opportunities", [])
+
+        # 5. Persist Opportunities
+        created_opp_ids = []
+        for opp in opportunities_data:
+            try:
+                created = create_opportunity(business_id, opp)
+                if created and "id" in created:
+                    created_opp_ids.append(created["id"])
+            except Exception:
+                pass
+
+        # 6. Generate & Save Executive Dossier
+        run_summary = {
+            "id": run_id,
+            "created_at": now,
+            "user_website": {
+                "url": website_url,
+                "tiles": user_manifest.get("tiles", []),
+            },
+            "competitors_analyzed": competitors,
+            "gtm_scores": gtm_scores,
+            "blind_spots": blind_spots,
+            "opportunities": opportunities_data,
+        }
+        dossier_md = generate_gtm_dossier_markdown(run_summary)
+        dossier_path = save_dossier_to_file(run_id, business_id, dossier_md)
+
+        # 7. Complete Run in Firestore
+        completed_at = datetime.utcnow().isoformat()
+        run_ref.update({
+            "status": "completed",
+            "completed_at": completed_at,
+            "gtm_scores": gtm_scores,
+            "blind_spots": blind_spots,
+            "competitors_analyzed": competitors,
+            "user_manifest": user_manifest,
+            "opportunities_created_count": len(created_opp_ids),
+            "dossier_path": dossier_path,
+        })
+
+        return {
+            "success": True,
+            "run_id": run_id,
+            "gtm_scores": gtm_scores,
+            "opportunities_count": len(created_opp_ids),
+        }
+
+    except Exception as exc:
+        run_ref.update({
+            "status": "failed",
+            "error": str(exc),
+            "completed_at": datetime.utcnow().isoformat(),
+        })
+        raise

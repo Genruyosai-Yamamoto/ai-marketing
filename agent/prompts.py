@@ -181,12 +181,11 @@ Each element of the array must match this schema exactly:
 }
 
 OUTPUT FORMAT (strict):
-- Return exactly one JSON array and nothing else — no markdown fences, no preamble, no
-  trailing commentary — even when the array is empty ([]).
-- Not a JSON object, not multiple arrays: a single top-level array of opportunity
-  objects (zero or more).
-- Use double quotes for every key and string value. No trailing commas, no comments.
-- The output must be valid JSON that a standard parser can load with no cleanup.
+- Return exactly one JSON object with a single "opportunities" field.
+- "opportunities" must contain an array of 0 to 5 opportunity objects.
+- Each opportunity must match the schema above exactly.
+- Use double quotes for every key and string value. No trailing commas or comments.
+- Return valid JSON only — no markdown fences, preamble, or commentary.
 
 FIELD RULES:
 - problem_key must be exactly one of the eleven values listed above.
