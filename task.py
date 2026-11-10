@@ -395,6 +395,7 @@ def run_gtm_analysis(self, business_id, user_id, run_id):
         dossier_path = save_dossier_to_file(run_id, business_id, dossier_md)
 
         # 7. Complete Run in Firestore
+                # 7. Complete Run in Firestore
         completed_at = datetime.utcnow().isoformat()
         run_ref.update({
             "status": "completed",
@@ -406,6 +407,20 @@ def run_gtm_analysis(self, business_id, user_id, run_id):
             "opportunities_created_count": len(created_opp_ids),
             "dossier_path": dossier_path,
         })
+
+        # Best-effort Telegram notification.
+        from services.telegram_service import notify_business
+
+        notify_business(
+            business_id,
+            (
+                "✅ BLOM GTM analysis completed!\n"
+                f"Run: {run_id}\n"
+                f"Opportunities created: {len(created_opp_ids)}\n"
+                "Your results are available in your BLOM dashboard."
+            ),
+            event_type="gtm_completed",
+        )
 
         return {
             "success": True,
@@ -420,4 +435,20 @@ def run_gtm_analysis(self, business_id, user_id, run_id):
             "error": str(exc),
             "completed_at": datetime.utcnow().isoformat(),
         })
+
+        # Best-effort Telegram failure notification.
+        try:
+            from services.telegram_service import notify_business
+            notify_business(
+                business_id,
+                (
+                    "⚠️ Your BLOM GTM analysis failed.\n"
+                    f"Run: {run_id}\n"
+                    "Please check your BLOM dashboard and try again."
+                ),
+                event_type="gtm_failed",
+            )
+        except Exception:
+            pass
+
         raise

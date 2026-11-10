@@ -1,0 +1,1843 @@
+...............................FFFFFFFFFFFFF.....FFFFFFF.....FFFF.FFFFFF [ 59%]
+FFFFFFFFFFFFFFFFFFFFFFFF.FFF.....FFFFF............                       [100%]
+=================================== FAILURES ===================================
+___________ test_get_connector_unrouted_action_type_raises[website] ____________
+
+action_type = 'website'
+
+    @pytest.mark.parametrize("action_type", UNROUTED_TYPES)
+    def test_get_connector_unrouted_action_type_raises(action_type):
+>       with pytest.raises(ValueError, match="No connector available for action type"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_connectors.py:17: Failed
+___________ test_get_connector_unrouted_action_type_raises[content] ____________
+
+action_type = 'content'
+
+    @pytest.mark.parametrize("action_type", UNROUTED_TYPES)
+    def test_get_connector_unrouted_action_type_raises(action_type):
+>       with pytest.raises(ValueError, match="No connector available for action type"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_connectors.py:17: Failed
+_____________ test_get_connector_unrouted_action_type_raises[seo] ______________
+
+action_type = 'seo'
+
+    @pytest.mark.parametrize("action_type", UNROUTED_TYPES)
+    def test_get_connector_unrouted_action_type_raises(action_type):
+>       with pytest.raises(ValueError, match="No connector available for action type"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_connectors.py:17: Failed
+____________ test_get_connector_unrouted_action_type_raises[email] _____________
+
+action_type = 'email'
+
+    @pytest.mark.parametrize("action_type", UNROUTED_TYPES)
+    def test_get_connector_unrouted_action_type_raises(action_type):
+>       with pytest.raises(ValueError, match="No connector available for action type"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_connectors.py:17: Failed
+___________ test_get_connector_unrouted_action_type_raises[research] ___________
+
+action_type = 'research'
+
+    @pytest.mark.parametrize("action_type", UNROUTED_TYPES)
+    def test_get_connector_unrouted_action_type_raises(action_type):
+>       with pytest.raises(ValueError, match="No connector available for action type"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_connectors.py:17: Failed
+____________ test_get_connector_unrouted_action_type_raises[other] _____________
+
+action_type = 'other'
+
+    @pytest.mark.parametrize("action_type", UNROUTED_TYPES)
+    def test_get_connector_unrouted_action_type_raises(action_type):
+>       with pytest.raises(ValueError, match="No connector available for action type"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_connectors.py:17: Failed
+_______ test_get_connector_missing_or_blank_action_type_raises[action0] ________
+
+action = {}
+
+    @pytest.mark.parametrize(
+        "action",
+        [{}, {"action_type": None}, {"action_type": ""}],
+    )
+    def test_get_connector_missing_or_blank_action_type_raises(action):
+>       with pytest.raises(ValueError, match="No connector available for action type"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_connectors.py:26: Failed
+_______ test_get_connector_missing_or_blank_action_type_raises[action1] ________
+
+action = {'action_type': None}
+
+    @pytest.mark.parametrize(
+        "action",
+        [{}, {"action_type": None}, {"action_type": ""}],
+    )
+    def test_get_connector_missing_or_blank_action_type_raises(action):
+>       with pytest.raises(ValueError, match="No connector available for action type"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_connectors.py:26: Failed
+_______ test_get_connector_missing_or_blank_action_type_raises[action2] ________
+
+action = {'action_type': ''}
+
+    @pytest.mark.parametrize(
+        "action",
+        [{}, {"action_type": None}, {"action_type": ""}],
+    )
+    def test_get_connector_missing_or_blank_action_type_raises(action):
+>       with pytest.raises(ValueError, match="No connector available for action type"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_connectors.py:26: Failed
+________________ test_instagram_connector_accepts_social_action ________________
+
+    def test_instagram_connector_accepts_social_action():
+>       result = InstagramConnector().execute({"action_type": "social"})
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: InstagramConnector.execute() missing 2 required positional arguments: 'business_id' and 'user_id'
+
+tests/test_connectors.py:31: TypeError
+______________ test_instagram_connector_rejects_non_social_action ______________
+
+    def test_instagram_connector_rejects_non_social_action():
+        with pytest.raises(ValueError, match="only supports social actions"):
+>           InstagramConnector().execute({"action_type": "email"})
+E           TypeError: InstagramConnector.execute() missing 2 required positional arguments: 'business_id' and 'user_id'
+
+tests/test_connectors.py:39: TypeError
+_____________________ test_execute_action_completed_social _____________________
+
+execution_env = (<module 'services.execution_engine' from '/home/parrot/blom/backend/services/execution_engine.py'>, <test_execution_engine.FakeTaskDb object at 0x7fe1e87378c0>)
+
+    def test_execute_action_completed_social(execution_env):
+        execution_engine, db = execution_env
+        biz_ref = db.collection("businesses").document("b1")
+        biz_ref.collection("executions").document("e1").set({"action_id": "a1"})
+        biz_ref.collection("actions").document("a1").set(
+            {"action_type": "social", "status": "approved"}
+        )
+    
+>       result = execution_engine.execute_action("b1", "e1")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_execution_engine.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+business_id = 'b1', execution_id = 'e1'
+
+    def execute_action(business_id, execution_id):
+    
+        business_ref = (
+            db.collection("businesses")
+            .document(business_id)
+        )
+    
+        execution_ref = (
+            business_ref
+            .collection("executions")
+            .document(execution_id)
+        )
+    
+        execution_doc = execution_ref.get()
+    
+        if not execution_doc.exists:
+            raise ValueError("Execution not found")
+    
+        execution = execution_doc.to_dict()
+    
+        if execution.get("status") == "completed":
+            return execution.get("result")
+    
+        action_id = execution.get("action_id")
+    
+        if not action_id:
+            raise ValueError("Execution has no action_id")
+    
+        action_ref = (
+            business_ref
+            .collection("actions")
+            .document(action_id)
+        )
+    
+        action_doc = action_ref.get()
+    
+        if not action_doc.exists:
+            raise ValueError("Action not found")
+    
+        action = action_doc.to_dict()
+    
+        # Critical safety check
+        if action.get("status") != "approved":
+            raise ValueError(
+                "Action must be approved before execution"
+            )
+    
+        now = datetime.utcnow().isoformat()
+    
+        if execution.get("status") not in {"queued", "running"}:
+>           raise ValueError(
+                f"Execution cannot start from status: {execution.get('status')}"
+            )
+E           ValueError: Execution cannot start from status: None
+
+services/execution_engine.py:59: ValueError
+________________ test_execute_action_unrouted_type_marks_failed ________________
+
+execution_env = (<module 'services.execution_engine' from '/home/parrot/blom/backend/services/execution_engine.py'>, <test_execution_engine.FakeTaskDb object at 0x7fe1e827aad0>)
+
+    def test_execute_action_unrouted_type_marks_failed(execution_env):
+        execution_engine, db = execution_env
+        biz_ref = db.collection("businesses").document("b1")
+        biz_ref.collection("executions").document("e1").set({"action_id": "a1"})
+        biz_ref.collection("actions").document("a1").set(
+            {"action_type": "email", "status": "approved"}
+        )
+    
+>       with pytest.raises(
+            ValueError, match="No connector available for action type: email"
+        ):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'No connector available for action type: email'
+E         Actual message: 'Execution cannot start from status: None'
+
+tests/test_execution_engine.py:111: AssertionError
+_______________ test_valid_array_returns_validated_opportunities _______________
+
+og = <module 'agent.opportunity_generator' from '/home/parrot/blom/backend/agent/opportunity_generator.py'>
+fake_client = {'calls': [], 'build': <function fake_client.<locals>.build at 0x7fe1e78839c0>}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe1e842a3c0>
+
+    def test_valid_array_returns_validated_opportunities(og, fake_client, monkeypatch):
+        payload = json.dumps([VALID_ITEM])
+        monkeypatch.setattr(og, "client", fake_client["build"](payload))
+>       result = og.generate_opportunities(ANALYSIS)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_opportunity_generator.py:73: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+business_analysis = {'business_summary': 'ACME sells widgets.', 'target_audience': 'SMB owners.', 'value_proposition': 'Fast, reliable widgets.', 'products_or_services': ['Widgets'], ...}
+
+    def generate_opportunities(business_analysis):
+        """
+        Generate growth opportunities from a structured
+        business analysis.
+    
+        Returns a list of structured opportunities.
+        """
+    
+        prompt = f"""
+    Analyze the following business understanding and identify
+    the most relevant growth opportunities.
+    
+    Business understanding:
+    
+    {json.dumps(business_analysis, indent=2, ensure_ascii=False)}
+    
+    Return a JSON array containing opportunities.
+    """
+    
+>       response = client.chat.completions.create(
+            model=os.getenv(
+                "GROQ_MODEL",
+                "llama-3.3-70b-versatile",
+            ),
+            messages=[
+                {
+                    "role": "system",
+                    "content": OPPORTUNITY_GENERATION_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+            temperature=0.2,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "opportunity_list",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "opportunities": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {"type": "string"},
+                                        "description": {"type": "string"},
+                                        "problem": {"type": "string"},
+                                        "problem_key": {"type": "string"},
+                                        "evidence": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                        "potential_impact": {
+                                            "type": "string",
+                                            "enum": ["low", "medium", "high"],
+                                        },
+                                        "confidence": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 1,
+                                        },
+                                        "type": {
+                                            "type": "string",
+                                            "enum": [
+                                                "website",
+                                                "content",
+                                                "seo",
+                                                "conversion",
+                                                "social",
+                                                "other",
+                                            ],
+                                        },
+                                    },
+                                    "required": [
+                                        "title",
+                                        "description",
+                                        "problem",
+                                        "problem_key",
+                                        "evidence",
+                                        "potential_impact",
+                                        "confidence",
+                                        "type",
+                                    ],
+                                    "additionalProperties": False,
+                                },
+                            }
+                        },
+                        "required": ["opportunities"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+        )
+E       TypeError: fake_client.<locals>.build.<locals>.create() got an unexpected keyword argument 'response_format'
+
+agent/opportunity_generator.py:38: TypeError
+_______________________ test_model_reads_groq_model_env ________________________
+
+og = <module 'agent.opportunity_generator' from '/home/parrot/blom/backend/agent/opportunity_generator.py'>
+fake_client = {'calls': [], 'build': <function fake_client.<locals>.build at 0x7fe1e76800e0>}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe1e77bbe00>
+
+    def test_model_reads_groq_model_env(og, fake_client, monkeypatch):
+        monkeypatch.setenv("GROQ_MODEL", "custom-model")
+        monkeypatch.setattr(og, "client", fake_client["build"](json.dumps([VALID_ITEM])))
+>       og.generate_opportunities(ANALYSIS)
+
+tests/test_opportunity_generator.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+business_analysis = {'business_summary': 'ACME sells widgets.', 'target_audience': 'SMB owners.', 'value_proposition': 'Fast, reliable widgets.', 'products_or_services': ['Widgets'], ...}
+
+    def generate_opportunities(business_analysis):
+        """
+        Generate growth opportunities from a structured
+        business analysis.
+    
+        Returns a list of structured opportunities.
+        """
+    
+        prompt = f"""
+    Analyze the following business understanding and identify
+    the most relevant growth opportunities.
+    
+    Business understanding:
+    
+    {json.dumps(business_analysis, indent=2, ensure_ascii=False)}
+    
+    Return a JSON array containing opportunities.
+    """
+    
+>       response = client.chat.completions.create(
+            model=os.getenv(
+                "GROQ_MODEL",
+                "llama-3.3-70b-versatile",
+            ),
+            messages=[
+                {
+                    "role": "system",
+                    "content": OPPORTUNITY_GENERATION_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+            temperature=0.2,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "opportunity_list",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "opportunities": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {"type": "string"},
+                                        "description": {"type": "string"},
+                                        "problem": {"type": "string"},
+                                        "problem_key": {"type": "string"},
+                                        "evidence": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                        "potential_impact": {
+                                            "type": "string",
+                                            "enum": ["low", "medium", "high"],
+                                        },
+                                        "confidence": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 1,
+                                        },
+                                        "type": {
+                                            "type": "string",
+                                            "enum": [
+                                                "website",
+                                                "content",
+                                                "seo",
+                                                "conversion",
+                                                "social",
+                                                "other",
+                                            ],
+                                        },
+                                    },
+                                    "required": [
+                                        "title",
+                                        "description",
+                                        "problem",
+                                        "problem_key",
+                                        "evidence",
+                                        "potential_impact",
+                                        "confidence",
+                                        "type",
+                                    ],
+                                    "additionalProperties": False,
+                                },
+                            }
+                        },
+                        "required": ["opportunities"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+        )
+E       TypeError: fake_client.<locals>.build.<locals>.create() got an unexpected keyword argument 'response_format'
+
+agent/opportunity_generator.py:38: TypeError
+__________________________ test_empty_response_raises __________________________
+
+og = <module 'agent.opportunity_generator' from '/home/parrot/blom/backend/agent/opportunity_generator.py'>
+fake_client = {'calls': [], 'build': <function fake_client.<locals>.build at 0x7fe1e7680400>}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe1e92ff540>
+
+    def test_empty_response_raises(og, fake_client, monkeypatch):
+        monkeypatch.setattr(og, "client", fake_client["build"](None))
+        with pytest.raises(ValueError, match="Groq returned an empty response"):
+>           og.generate_opportunities(ANALYSIS)
+
+tests/test_opportunity_generator.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+business_analysis = {'business_summary': 'ACME sells widgets.', 'target_audience': 'SMB owners.', 'value_proposition': 'Fast, reliable widgets.', 'products_or_services': ['Widgets'], ...}
+
+    def generate_opportunities(business_analysis):
+        """
+        Generate growth opportunities from a structured
+        business analysis.
+    
+        Returns a list of structured opportunities.
+        """
+    
+        prompt = f"""
+    Analyze the following business understanding and identify
+    the most relevant growth opportunities.
+    
+    Business understanding:
+    
+    {json.dumps(business_analysis, indent=2, ensure_ascii=False)}
+    
+    Return a JSON array containing opportunities.
+    """
+    
+>       response = client.chat.completions.create(
+            model=os.getenv(
+                "GROQ_MODEL",
+                "llama-3.3-70b-versatile",
+            ),
+            messages=[
+                {
+                    "role": "system",
+                    "content": OPPORTUNITY_GENERATION_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+            temperature=0.2,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "opportunity_list",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "opportunities": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {"type": "string"},
+                                        "description": {"type": "string"},
+                                        "problem": {"type": "string"},
+                                        "problem_key": {"type": "string"},
+                                        "evidence": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                        "potential_impact": {
+                                            "type": "string",
+                                            "enum": ["low", "medium", "high"],
+                                        },
+                                        "confidence": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 1,
+                                        },
+                                        "type": {
+                                            "type": "string",
+                                            "enum": [
+                                                "website",
+                                                "content",
+                                                "seo",
+                                                "conversion",
+                                                "social",
+                                                "other",
+                                            ],
+                                        },
+                                    },
+                                    "required": [
+                                        "title",
+                                        "description",
+                                        "problem",
+                                        "problem_key",
+                                        "evidence",
+                                        "potential_impact",
+                                        "confidence",
+                                        "type",
+                                    ],
+                                    "additionalProperties": False,
+                                },
+                            }
+                        },
+                        "required": ["opportunities"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+        )
+E       TypeError: fake_client.<locals>.build.<locals>.create() got an unexpected keyword argument 'response_format'
+
+agent/opportunity_generator.py:38: TypeError
+___________________________ test_invalid_json_raises ___________________________
+
+og = <module 'agent.opportunity_generator' from '/home/parrot/blom/backend/agent/opportunity_generator.py'>
+fake_client = {'calls': [], 'build': <function fake_client.<locals>.build at 0x7fe1e7680860>}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe1e7659cc0>
+
+    def test_invalid_json_raises(og, fake_client, monkeypatch):
+        monkeypatch.setattr(og, "client", fake_client["build"]("not json"))
+        with pytest.raises(ValueError, match="Groq returned invalid opportunity JSON"):
+>           og.generate_opportunities(ANALYSIS)
+
+tests/test_opportunity_generator.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+business_analysis = {'business_summary': 'ACME sells widgets.', 'target_audience': 'SMB owners.', 'value_proposition': 'Fast, reliable widgets.', 'products_or_services': ['Widgets'], ...}
+
+    def generate_opportunities(business_analysis):
+        """
+        Generate growth opportunities from a structured
+        business analysis.
+    
+        Returns a list of structured opportunities.
+        """
+    
+        prompt = f"""
+    Analyze the following business understanding and identify
+    the most relevant growth opportunities.
+    
+    Business understanding:
+    
+    {json.dumps(business_analysis, indent=2, ensure_ascii=False)}
+    
+    Return a JSON array containing opportunities.
+    """
+    
+>       response = client.chat.completions.create(
+            model=os.getenv(
+                "GROQ_MODEL",
+                "llama-3.3-70b-versatile",
+            ),
+            messages=[
+                {
+                    "role": "system",
+                    "content": OPPORTUNITY_GENERATION_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+            temperature=0.2,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "opportunity_list",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "opportunities": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {"type": "string"},
+                                        "description": {"type": "string"},
+                                        "problem": {"type": "string"},
+                                        "problem_key": {"type": "string"},
+                                        "evidence": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                        "potential_impact": {
+                                            "type": "string",
+                                            "enum": ["low", "medium", "high"],
+                                        },
+                                        "confidence": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 1,
+                                        },
+                                        "type": {
+                                            "type": "string",
+                                            "enum": [
+                                                "website",
+                                                "content",
+                                                "seo",
+                                                "conversion",
+                                                "social",
+                                                "other",
+                                            ],
+                                        },
+                                    },
+                                    "required": [
+                                        "title",
+                                        "description",
+                                        "problem",
+                                        "problem_key",
+                                        "evidence",
+                                        "potential_impact",
+                                        "confidence",
+                                        "type",
+                                    ],
+                                    "additionalProperties": False,
+                                },
+                            }
+                        },
+                        "required": ["opportunities"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+        )
+E       TypeError: fake_client.<locals>.build.<locals>.create() got an unexpected keyword argument 'response_format'
+
+agent/opportunity_generator.py:38: TypeError
+____________________________ test_non_array_raises _____________________________
+
+og = <module 'agent.opportunity_generator' from '/home/parrot/blom/backend/agent/opportunity_generator.py'>
+fake_client = {'calls': [], 'build': <function fake_client.<locals>.build at 0x7fe1e7680cc0>}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe1e765a900>
+
+    def test_non_array_raises(og, fake_client, monkeypatch):
+        monkeypatch.setattr(og, "client", fake_client["build"]('{"a": 1}'))
+        with pytest.raises(ValueError, match="Opportunity response must be a JSON array"):
+>           og.generate_opportunities(ANALYSIS)
+
+tests/test_opportunity_generator.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+business_analysis = {'business_summary': 'ACME sells widgets.', 'target_audience': 'SMB owners.', 'value_proposition': 'Fast, reliable widgets.', 'products_or_services': ['Widgets'], ...}
+
+    def generate_opportunities(business_analysis):
+        """
+        Generate growth opportunities from a structured
+        business analysis.
+    
+        Returns a list of structured opportunities.
+        """
+    
+        prompt = f"""
+    Analyze the following business understanding and identify
+    the most relevant growth opportunities.
+    
+    Business understanding:
+    
+    {json.dumps(business_analysis, indent=2, ensure_ascii=False)}
+    
+    Return a JSON array containing opportunities.
+    """
+    
+>       response = client.chat.completions.create(
+            model=os.getenv(
+                "GROQ_MODEL",
+                "llama-3.3-70b-versatile",
+            ),
+            messages=[
+                {
+                    "role": "system",
+                    "content": OPPORTUNITY_GENERATION_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+            temperature=0.2,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "opportunity_list",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "opportunities": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {"type": "string"},
+                                        "description": {"type": "string"},
+                                        "problem": {"type": "string"},
+                                        "problem_key": {"type": "string"},
+                                        "evidence": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                        "potential_impact": {
+                                            "type": "string",
+                                            "enum": ["low", "medium", "high"],
+                                        },
+                                        "confidence": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 1,
+                                        },
+                                        "type": {
+                                            "type": "string",
+                                            "enum": [
+                                                "website",
+                                                "content",
+                                                "seo",
+                                                "conversion",
+                                                "social",
+                                                "other",
+                                            ],
+                                        },
+                                    },
+                                    "required": [
+                                        "title",
+                                        "description",
+                                        "problem",
+                                        "problem_key",
+                                        "evidence",
+                                        "potential_impact",
+                                        "confidence",
+                                        "type",
+                                    ],
+                                    "additionalProperties": False,
+                                },
+                            }
+                        },
+                        "required": ["opportunities"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+        )
+E       TypeError: fake_client.<locals>.build.<locals>.create() got an unexpected keyword argument 'response_format'
+
+agent/opportunity_generator.py:38: TypeError
+_________________________ test_schema_violation_raises _________________________
+
+og = <module 'agent.opportunity_generator' from '/home/parrot/blom/backend/agent/opportunity_generator.py'>
+fake_client = {'calls': [], 'build': <function fake_client.<locals>.build at 0x7fe1e7680fe0>}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe1e765a970>
+
+    def test_schema_violation_raises(og, fake_client, monkeypatch):
+        broken = dict(VALID_ITEM, confidence=2)
+        monkeypatch.setattr(og, "client", fake_client["build"](json.dumps([broken])))
+        with pytest.raises(ValueError, match="confidence 2 out of range"):
+>           og.generate_opportunities(ANALYSIS)
+
+tests/test_opportunity_generator.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+business_analysis = {'business_summary': 'ACME sells widgets.', 'target_audience': 'SMB owners.', 'value_proposition': 'Fast, reliable widgets.', 'products_or_services': ['Widgets'], ...}
+
+    def generate_opportunities(business_analysis):
+        """
+        Generate growth opportunities from a structured
+        business analysis.
+    
+        Returns a list of structured opportunities.
+        """
+    
+        prompt = f"""
+    Analyze the following business understanding and identify
+    the most relevant growth opportunities.
+    
+    Business understanding:
+    
+    {json.dumps(business_analysis, indent=2, ensure_ascii=False)}
+    
+    Return a JSON array containing opportunities.
+    """
+    
+>       response = client.chat.completions.create(
+            model=os.getenv(
+                "GROQ_MODEL",
+                "llama-3.3-70b-versatile",
+            ),
+            messages=[
+                {
+                    "role": "system",
+                    "content": OPPORTUNITY_GENERATION_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+            temperature=0.2,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "opportunity_list",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "opportunities": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {"type": "string"},
+                                        "description": {"type": "string"},
+                                        "problem": {"type": "string"},
+                                        "problem_key": {"type": "string"},
+                                        "evidence": {
+                                            "type": "array",
+                                            "items": {"type": "string"},
+                                        },
+                                        "potential_impact": {
+                                            "type": "string",
+                                            "enum": ["low", "medium", "high"],
+                                        },
+                                        "confidence": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 1,
+                                        },
+                                        "type": {
+                                            "type": "string",
+                                            "enum": [
+                                                "website",
+                                                "content",
+                                                "seo",
+                                                "conversion",
+                                                "social",
+                                                "other",
+                                            ],
+                                        },
+                                    },
+                                    "required": [
+                                        "title",
+                                        "description",
+                                        "problem",
+                                        "problem_key",
+                                        "evidence",
+                                        "potential_impact",
+                                        "confidence",
+                                        "type",
+                                    ],
+                                    "additionalProperties": False,
+                                },
+                            }
+                        },
+                        "required": ["opportunities"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+        )
+E       TypeError: fake_client.<locals>.build.<locals>.create() got an unexpected keyword argument 'response_format'
+
+agent/opportunity_generator.py:38: TypeError
+_________________________ test_valid_full_list_passes __________________________
+
+    def test_valid_full_list_passes():
+        items = [
+            _valid_item(potential_impact="high", confidence=0.9),
+            _valid_item(potential_impact="medium", confidence=0.8),
+            _valid_item(potential_impact="medium", confidence=0.5),
+            _valid_item(potential_impact="low", confidence=0.7),
+            _valid_item(potential_impact="low", confidence=0.4),
+        ]
+>       assert v.validate_opportunities(items) == items
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_opportunity_validation.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+agent/opportunity_validation.py:115: in validate_opportunities
+    validate_opportunity_item(item, index)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+item = {'title': 'Missing pricing page', 'description': 'No pricing information visible on the site.', 'problem': 'Pricing transparency gap on the home page.', 'evidence': ['No pricing links found in navigation'], ...}
+index = 0
+
+    def validate_opportunity_item(item, index=0):
+        """Validate one opportunity dict. Raises ValueError on any defect,
+        otherwise returns the item unchanged. Extra keys are tolerated."""
+        prefix = f"Opportunity {index}"
+    
+        if not isinstance(item, dict):
+            raise ValueError(f"{prefix}: must be a dict")
+    
+        for key in _REQUIRED_KEYS:
+            if key not in item:
+>               raise ValueError(f"{prefix}: missing key '{key}'")
+E               ValueError: Opportunity 0: missing key 'problem_key'
+
+agent/opportunity_validation.py:56: ValueError
+_____________________ test_missing_key_raises[problem_key] _____________________
+
+key = 'problem_key'
+
+    @pytest.mark.parametrize("key", v._REQUIRED_KEYS)
+    def test_missing_key_raises(key):
+        item = _valid_item()
+>       del item[key]
+            ^^^^^^^^^
+E       KeyError: 'problem_key'
+
+tests/test_opportunity_validation.py:38: KeyError
+_____________________ test_missing_key_raises[description] _____________________
+
+key = 'description'
+
+    @pytest.mark.parametrize("key", v._REQUIRED_KEYS)
+    def test_missing_key_raises(key):
+        item = _valid_item()
+        del item[key]
+>       with pytest.raises(ValueError, match=f"missing key '{key}'"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "missing key 'description'"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:39: AssertionError
+________________________ test_missing_key_raises[title] ________________________
+
+key = 'title'
+
+    @pytest.mark.parametrize("key", v._REQUIRED_KEYS)
+    def test_missing_key_raises(key):
+        item = _valid_item()
+        del item[key]
+>       with pytest.raises(ValueError, match=f"missing key '{key}'"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "missing key 'title'"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:39: AssertionError
+______________________ test_missing_key_raises[evidence] _______________________
+
+key = 'evidence'
+
+    @pytest.mark.parametrize("key", v._REQUIRED_KEYS)
+    def test_missing_key_raises(key):
+        item = _valid_item()
+        del item[key]
+>       with pytest.raises(ValueError, match=f"missing key '{key}'"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "missing key 'evidence'"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:39: AssertionError
+_________________ test_string_fields_reject_bad_values[-title] _________________
+
+key = 'title', bad = ''
+
+    @pytest.mark.parametrize("key", ["title", "description", "problem"])
+    @pytest.mark.parametrize("bad", ["", "   ", 42, None])
+    def test_string_fields_reject_bad_values(key, bad):
+>       with pytest.raises(ValueError, match=f"'{key}' must be a non-empty string"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'title' must be a non-empty string"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:51: AssertionError
+______________ test_string_fields_reject_bad_values[-description] ______________
+
+key = 'description', bad = ''
+
+    @pytest.mark.parametrize("key", ["title", "description", "problem"])
+    @pytest.mark.parametrize("bad", ["", "   ", 42, None])
+    def test_string_fields_reject_bad_values(key, bad):
+>       with pytest.raises(ValueError, match=f"'{key}' must be a non-empty string"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'description' must be a non-empty string"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:51: AssertionError
+________________ test_string_fields_reject_bad_values[-problem] ________________
+
+key = 'problem', bad = ''
+
+    @pytest.mark.parametrize("key", ["title", "description", "problem"])
+    @pytest.mark.parametrize("bad", ["", "   ", 42, None])
+    def test_string_fields_reject_bad_values(key, bad):
+>       with pytest.raises(ValueError, match=f"'{key}' must be a non-empty string"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'problem' must be a non-empty string"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:51: AssertionError
+_______________ test_string_fields_reject_bad_values[   -title] ________________
+
+key = 'title', bad = '   '
+
+    @pytest.mark.parametrize("key", ["title", "description", "problem"])
+    @pytest.mark.parametrize("bad", ["", "   ", 42, None])
+    def test_string_fields_reject_bad_values(key, bad):
+>       with pytest.raises(ValueError, match=f"'{key}' must be a non-empty string"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'title' must be a non-empty string"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:51: AssertionError
+____________ test_string_fields_reject_bad_values[   -description] _____________
+
+key = 'description', bad = '   '
+
+    @pytest.mark.parametrize("key", ["title", "description", "problem"])
+    @pytest.mark.parametrize("bad", ["", "   ", 42, None])
+    def test_string_fields_reject_bad_values(key, bad):
+>       with pytest.raises(ValueError, match=f"'{key}' must be a non-empty string"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'description' must be a non-empty string"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:51: AssertionError
+______________ test_string_fields_reject_bad_values[   -problem] _______________
+
+key = 'problem', bad = '   '
+
+    @pytest.mark.parametrize("key", ["title", "description", "problem"])
+    @pytest.mark.parametrize("bad", ["", "   ", 42, None])
+    def test_string_fields_reject_bad_values(key, bad):
+>       with pytest.raises(ValueError, match=f"'{key}' must be a non-empty string"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'problem' must be a non-empty string"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:51: AssertionError
+________________ test_string_fields_reject_bad_values[42-title] ________________
+
+key = 'title', bad = 42
+
+    @pytest.mark.parametrize("key", ["title", "description", "problem"])
+    @pytest.mark.parametrize("bad", ["", "   ", 42, None])
+    def test_string_fields_reject_bad_values(key, bad):
+>       with pytest.raises(ValueError, match=f"'{key}' must be a non-empty string"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'title' must be a non-empty string"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:51: AssertionError
+_____________ test_string_fields_reject_bad_values[42-description] _____________
+
+key = 'description', bad = 42
+
+    @pytest.mark.parametrize("key", ["title", "description", "problem"])
+    @pytest.mark.parametrize("bad", ["", "   ", 42, None])
+    def test_string_fields_reject_bad_values(key, bad):
+>       with pytest.raises(ValueError, match=f"'{key}' must be a non-empty string"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'description' must be a non-empty string"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:51: AssertionError
+_______________ test_string_fields_reject_bad_values[42-problem] _______________
+
+key = 'problem', bad = 42
+
+    @pytest.mark.parametrize("key", ["title", "description", "problem"])
+    @pytest.mark.parametrize("bad", ["", "   ", 42, None])
+    def test_string_fields_reject_bad_values(key, bad):
+>       with pytest.raises(ValueError, match=f"'{key}' must be a non-empty string"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'problem' must be a non-empty string"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:51: AssertionError
+_______________ test_string_fields_reject_bad_values[None-title] _______________
+
+key = 'title', bad = None
+
+    @pytest.mark.parametrize("key", ["title", "description", "problem"])
+    @pytest.mark.parametrize("bad", ["", "   ", 42, None])
+    def test_string_fields_reject_bad_values(key, bad):
+>       with pytest.raises(ValueError, match=f"'{key}' must be a non-empty string"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'title' must be a non-empty string"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:51: AssertionError
+____________ test_string_fields_reject_bad_values[None-description] ____________
+
+key = 'description', bad = None
+
+    @pytest.mark.parametrize("key", ["title", "description", "problem"])
+    @pytest.mark.parametrize("bad", ["", "   ", 42, None])
+    def test_string_fields_reject_bad_values(key, bad):
+>       with pytest.raises(ValueError, match=f"'{key}' must be a non-empty string"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'description' must be a non-empty string"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:51: AssertionError
+______________ test_string_fields_reject_bad_values[None-problem] ______________
+
+key = 'problem', bad = None
+
+    @pytest.mark.parametrize("key", ["title", "description", "problem"])
+    @pytest.mark.parametrize("bad", ["", "   ", 42, None])
+    def test_string_fields_reject_bad_values(key, bad):
+>       with pytest.raises(ValueError, match=f"'{key}' must be a non-empty string"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'problem' must be a non-empty string"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:51: AssertionError
+____________________ test_evidence_rejects_bad_values[bad0] ____________________
+
+bad = []
+
+    @pytest.mark.parametrize("bad", [[], ["ok", 3], ["ok", ""], "nope"])
+    def test_evidence_rejects_bad_values(bad):
+>       with pytest.raises(ValueError, match="'evidence' must be a non-empty list of strings"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'evidence' must be a non-empty list of strings"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:57: AssertionError
+____________________ test_evidence_rejects_bad_values[bad1] ____________________
+
+bad = ['ok', 3]
+
+    @pytest.mark.parametrize("bad", [[], ["ok", 3], ["ok", ""], "nope"])
+    def test_evidence_rejects_bad_values(bad):
+>       with pytest.raises(ValueError, match="'evidence' must be a non-empty list of strings"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'evidence' must be a non-empty list of strings"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:57: AssertionError
+____________________ test_evidence_rejects_bad_values[bad2] ____________________
+
+bad = ['ok', '']
+
+    @pytest.mark.parametrize("bad", [[], ["ok", 3], ["ok", ""], "nope"])
+    def test_evidence_rejects_bad_values(bad):
+>       with pytest.raises(ValueError, match="'evidence' must be a non-empty list of strings"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'evidence' must be a non-empty list of strings"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:57: AssertionError
+____________________ test_evidence_rejects_bad_values[nope] ____________________
+
+bad = 'nope'
+
+    @pytest.mark.parametrize("bad", [[], ["ok", 3], ["ok", ""], "nope"])
+    def test_evidence_rejects_bad_values(bad):
+>       with pytest.raises(ValueError, match="'evidence' must be a non-empty list of strings"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'evidence' must be a non-empty list of strings"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:57: AssertionError
+_______________________ test_bad_potential_impact_raises _______________________
+
+    def test_bad_potential_impact_raises():
+>       with pytest.raises(ValueError, match=r"potential_impact 'critical' not in"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "potential_impact 'critical' not in"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:62: AssertionError
+________________ test_unhashable_potential_impact_raises[bad0] _________________
+
+bad = {}
+
+    @pytest.mark.parametrize("bad", [{}, [], ["high"]])
+    def test_unhashable_potential_impact_raises(bad):
+>       with pytest.raises(ValueError, match="potential_impact"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'potential_impact'
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:68: AssertionError
+________________ test_unhashable_potential_impact_raises[bad1] _________________
+
+bad = []
+
+    @pytest.mark.parametrize("bad", [{}, [], ["high"]])
+    def test_unhashable_potential_impact_raises(bad):
+>       with pytest.raises(ValueError, match="potential_impact"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'potential_impact'
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:68: AssertionError
+________________ test_unhashable_potential_impact_raises[bad2] _________________
+
+bad = ['high']
+
+    @pytest.mark.parametrize("bad", [{}, [], ["high"]])
+    def test_unhashable_potential_impact_raises(bad):
+>       with pytest.raises(ValueError, match="potential_impact"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'potential_impact'
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:68: AssertionError
+_____________________________ test_bad_type_raises _____________________________
+
+    def test_bad_type_raises():
+>       with pytest.raises(ValueError, match=r"type 'ads' not in"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "type 'ads' not in"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:73: AssertionError
+______________________ test_unhashable_type_raises[bad0] _______________________
+
+bad = {}
+
+    @pytest.mark.parametrize("bad", [{}, [], ["website"]])
+    def test_unhashable_type_raises(bad):
+>       with pytest.raises(ValueError, match="type"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'type'
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:79: AssertionError
+______________________ test_unhashable_type_raises[bad1] _______________________
+
+bad = []
+
+    @pytest.mark.parametrize("bad", [{}, [], ["website"]])
+    def test_unhashable_type_raises(bad):
+>       with pytest.raises(ValueError, match="type"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'type'
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:79: AssertionError
+______________________ test_unhashable_type_raises[bad2] _______________________
+
+bad = ['website']
+
+    @pytest.mark.parametrize("bad", [{}, [], ["website"]])
+    def test_unhashable_type_raises(bad):
+>       with pytest.raises(ValueError, match="type"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'type'
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:79: AssertionError
+_____________________ test_confidence_must_be_number[0.5] ______________________
+
+bad = '0.5'
+
+    @pytest.mark.parametrize("bad", ["0.5", True, None])
+    def test_confidence_must_be_number(bad):
+>       with pytest.raises(ValueError, match="'confidence' must be a number"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'confidence' must be a number"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:85: AssertionError
+_____________________ test_confidence_must_be_number[True] _____________________
+
+bad = True
+
+    @pytest.mark.parametrize("bad", ["0.5", True, None])
+    def test_confidence_must_be_number(bad):
+>       with pytest.raises(ValueError, match="'confidence' must be a number"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'confidence' must be a number"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:85: AssertionError
+_____________________ test_confidence_must_be_number[None] _____________________
+
+bad = None
+
+    @pytest.mark.parametrize("bad", ["0.5", True, None])
+    def test_confidence_must_be_number(bad):
+>       with pytest.raises(ValueError, match="'confidence' must be a number"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: "'confidence' must be a number"
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:85: AssertionError
+___________________ test_confidence_out_of_range_raises[1.2] ___________________
+
+bad = 1.2
+
+    @pytest.mark.parametrize("bad", [1.2, -0.1, 2])
+    def test_confidence_out_of_range_raises(bad):
+>       with pytest.raises(ValueError, match=r"confidence -?[\d.]+ out of range \[0, 1\]"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'confidence -?[\\d.]+ out of range \\[0, 1\\]'
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:91: AssertionError
+__________________ test_confidence_out_of_range_raises[-0.1] ___________________
+
+bad = -0.1
+
+    @pytest.mark.parametrize("bad", [1.2, -0.1, 2])
+    def test_confidence_out_of_range_raises(bad):
+>       with pytest.raises(ValueError, match=r"confidence -?[\d.]+ out of range \[0, 1\]"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'confidence -?[\\d.]+ out of range \\[0, 1\\]'
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:91: AssertionError
+____________________ test_confidence_out_of_range_raises[2] ____________________
+
+bad = 2
+
+    @pytest.mark.parametrize("bad", [1.2, -0.1, 2])
+    def test_confidence_out_of_range_raises(bad):
+>       with pytest.raises(ValueError, match=r"confidence -?[\d.]+ out of range \[0, 1\]"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'confidence -?[\\d.]+ out of range \\[0, 1\\]'
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:91: AssertionError
+___________________________ test_out_of_order_raises ___________________________
+
+    def test_out_of_order_raises():
+        items = [
+            _valid_item(potential_impact="low", confidence=0.4),
+            _valid_item(potential_impact="high", confidence=0.9),
+        ]
+>       with pytest.raises(ValueError, match="opportunities out of order at index 1"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'opportunities out of order at index 1'
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_opportunity_validation.py:106: AssertionError
+___________________________ test_ties_are_permitted ____________________________
+
+    def test_ties_are_permitted():
+        items = [
+            _valid_item(potential_impact="high", confidence=0.9),
+            _valid_item(potential_impact="high", confidence=0.9),
+        ]
+>       assert v.validate_opportunities(items) == items
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_opportunity_validation.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+agent/opportunity_validation.py:115: in validate_opportunities
+    validate_opportunity_item(item, index)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+item = {'title': 'Missing pricing page', 'description': 'No pricing information visible on the site.', 'problem': 'Pricing transparency gap on the home page.', 'evidence': ['No pricing links found in navigation'], ...}
+index = 0
+
+    def validate_opportunity_item(item, index=0):
+        """Validate one opportunity dict. Raises ValueError on any defect,
+        otherwise returns the item unchanged. Extra keys are tolerated."""
+        prefix = f"Opportunity {index}"
+    
+        if not isinstance(item, dict):
+            raise ValueError(f"{prefix}: must be a dict")
+    
+        for key in _REQUIRED_KEYS:
+            if key not in item:
+>               raise ValueError(f"{prefix}: missing key '{key}'")
+E               ValueError: Opportunity 0: missing key 'problem_key'
+
+agent/opportunity_validation.py:56: ValueError
+__________________________ test_extra_keys_tolerated ___________________________
+
+    def test_extra_keys_tolerated():
+        item = _valid_item(extra="anything")
+>       assert v.validate_opportunity_item(item) == item
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_opportunity_validation.py:122: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+item = {'title': 'Missing pricing page', 'description': 'No pricing information visible on the site.', 'problem': 'Pricing transparency gap on the home page.', 'evidence': ['No pricing links found in navigation'], ...}
+index = 0
+
+    def validate_opportunity_item(item, index=0):
+        """Validate one opportunity dict. Raises ValueError on any defect,
+        otherwise returns the item unchanged. Extra keys are tolerated."""
+        prefix = f"Opportunity {index}"
+    
+        if not isinstance(item, dict):
+            raise ValueError(f"{prefix}: must be a dict")
+    
+        for key in _REQUIRED_KEYS:
+            if key not in item:
+>               raise ValueError(f"{prefix}: missing key '{key}'")
+E               ValueError: Opportunity 0: missing key 'problem_key'
+
+agent/opportunity_validation.py:56: ValueError
+___________ test_happy_path_persists_opportunities_and_completes_run ___________
+
+task_env = (<module 'task' from '/home/parrot/blom/backend/task.py'>, <test_task_pipeline.FakeTaskDb object at 0x7fe1e77d5be0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe1e76c1400>
+
+    def test_happy_path_persists_opportunities_and_completes_run(task_env, monkeypatch):
+        task_mod, db = task_env
+        import agent.opportunity_generator as generator_mod
+    
+        monkeypatch.setattr(generator_mod, "generate_opportunities", lambda analysis: [
+            dict(VALID_OPPORTUNITY),
+            dict(VALID_OPPORTUNITY, title="Use Instagram", type="social", confidence=0.4),
+        ])
+    
+>       result = task_mod.analyze_business_website.run("b1", "u1", "r1")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_task_pipeline.py:131: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+task.py:194: in analyze_business_website
+    result = create_opportunity(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+business_id = 'b1'
+opportunity = {'title': 'Add SEO', 'description': 'Desc', 'problem': 'Problem', 'evidence': ['e1'], ...}
+owner_id = 'u1'
+
+    def create_opportunity(
+        business_id,
+        opportunity,
+        owner_id,
+    ):
+        if not business_id:
+            raise ValueError("business_id is required")
+    
+        if not owner_id:
+            raise ValueError("owner_id is required")
+    
+        if not isinstance(opportunity, dict):
+            raise ValueError("opportunity must be a dictionary")
+    
+        required_fields = {
+            "title",
+            "description",
+            "problem",
+            "evidence",
+            "potential_impact",
+            "confidence",
+            "type",
+        }
+    
+        missing_fields = required_fields - opportunity.keys()
+    
+        if missing_fields:
+            raise ValueError(
+                f"Opportunity is missing required fields: "
+                f"{sorted(missing_fields)}"
+            )
+    
+        business_ref = (
+            db.collection("businesses")
+            .document(business_id)
+        )
+    
+        business_doc = business_ref.get()
+    
+        if not business_doc.exists:
+>           raise ValueError("Business not found")
+E           ValueError: Business not found
+
+services/opportunity_service.py:56: ValueError
+----------------------------- Captured stdout call -----------------------------
+Search Console enrichment skipped: Business not found
+SEARCH CONSOLE DATA: NOT ATTACHED
+________________ test_observation_groq_failure_marks_run_failed ________________
+
+task_env = (<module 'task' from '/home/parrot/blom/backend/task.py'>, <test_task_pipeline.FakeTaskDb object at 0x7fe1e7539d10>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe1e7553150>
+
+    def test_observation_groq_failure_marks_run_failed(task_env, monkeypatch):
+        task_mod, db = task_env
+        import agent.analyzer as analyzer_mod
+    
+        monkeypatch.setattr(
+            analyzer_mod, "analyze_observation",
+            lambda observation: (_ for _ in ()).throw(RuntimeError("groq down")),
+        )
+    
+        with pytest.raises(RuntimeError, match="groq down"):
+            task_mod.analyze_business_website.run("b1", "u1", "r1")
+    
+        biz_ref = db.collection("businesses").document("b1")
+        run_ref = biz_ref.collection("agent_runs").document("r1")
+>       assert run_ref.data["status"] == "failed"
+E       AssertionError: assert 'queued' == 'failed'
+E         
+E         - failed
+E         + queued
+
+tests/test_task_pipeline.py:181: AssertionError
+________________ test_opportunity_groq_failure_marks_run_failed ________________
+
+task_env = (<module 'task' from '/home/parrot/blom/backend/task.py'>, <test_task_pipeline.FakeTaskDb object at 0x7fe1e827b750>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe1e75530e0>
+
+    def test_opportunity_groq_failure_marks_run_failed(task_env, monkeypatch):
+        task_mod, db = task_env
+        import agent.opportunity_generator as generator_mod
+    
+        monkeypatch.setattr(
+            generator_mod, "generate_opportunities",
+            lambda analysis: (_ for _ in ()).throw(ValueError("bad JSON")),
+        )
+    
+        with pytest.raises(ValueError, match="bad JSON"):
+            task_mod.analyze_business_website.run("b1", "u1", "r1")
+    
+        biz_ref = db.collection("businesses").document("b1")
+        run_ref = biz_ref.collection("agent_runs").document("r1")
+>       assert run_ref.data["status"] == "failed"
+E       AssertionError: assert 'queued' == 'failed'
+E         
+E         - failed
+E         + queued
+
+tests/test_task_pipeline.py:201: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Search Console enrichment skipped: Business not found
+SEARCH CONSOLE DATA: NOT ATTACHED
+________________ test_invalid_opportunity_data_marks_run_failed ________________
+
+task_env = (<module 'task' from '/home/parrot/blom/backend/task.py'>, <test_task_pipeline.FakeTaskDb object at 0x7fe1e77075c0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe1e75534d0>
+
+    def test_invalid_opportunity_data_marks_run_failed(task_env, monkeypatch):
+        task_mod, db = task_env
+        import agent.opportunity_generator as generator_mod
+        from agent.opportunity_validation import validate_opportunities
+    
+        broken = dict(VALID_OPPORTUNITY, confidence=2)
+    
+        monkeypatch.setattr(
+            generator_mod, "generate_opportunities",
+            lambda analysis: validate_opportunities([broken]),
+        )
+    
+>       with pytest.raises(ValueError, match="out of range"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'out of range'
+E         Actual message: "Opportunity 0: missing key 'problem_key'"
+
+tests/test_task_pipeline.py:219: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Search Console enrichment skipped: Business not found
+SEARCH CONSOLE DATA: NOT ATTACHED
+_____________ test_empty_opportunities_completes_run_with_no_docs ______________
+
+task_env = (<module 'task' from '/home/parrot/blom/backend/task.py'>, <test_task_pipeline.FakeTaskDb object at 0x7fe1e76cbe10>)
+
+    def test_empty_opportunities_completes_run_with_no_docs(task_env):
+        task_mod, db = task_env
+    
+>       result = task_mod.analyze_business_website.run("b1", "u1", "r1")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_task_pipeline.py:232: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+task.py:202: in analyze_business_website
+    planner_result = generate_actions_for_opportunities(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+business_id = 'b1', owner_id = 'u1'
+business_analysis = {'business_summary': 'Acme sells widgets.'}
+opportunity_ids = []
+
+    def generate_actions_for_opportunities(
+        business_id,
+        owner_id,
+        business_analysis,
+        opportunity_ids=None,
+    ):
+        if not business_id:
+            raise ValueError("business_id is required")
+    
+        if not owner_id:
+            raise ValueError("owner_id is required")
+    
+        if not isinstance(business_analysis, dict):
+            raise ValueError("business_analysis must be a dictionary")
+    
+        from firebase import db
+    
+        business_ref = (
+            db.collection("businesses")
+            .document(business_id)
+        )
+    
+        business_doc = business_ref.get()
+    
+        if not business_doc.exists:
+>           raise ValueError("Business not found")
+E           ValueError: Business not found
+
+services/opportunity_action_service.py:104: ValueError
+----------------------------- Captured stdout call -----------------------------
+Search Console enrichment skipped: Business not found
+SEARCH CONSOLE DATA: NOT ATTACHED
+=============================== warnings summary ===============================
+tests/test_auth_api.py::test_register_creates_user
+tests/test_auth_api.py::test_register_duplicate_email
+tests/test_auth_api.py::test_register_rate_limit
+tests/test_auth_api.py::test_register_rate_limit
+tests/test_auth_api.py::test_register_rate_limit
+tests/test_auth_api.py::test_register_rate_limit
+tests/test_auth_api.py::test_register_500_on_unexpected_error
+tests/test_auth_redis_wiring.py::test_check_registration_limit_falls_back_to_memory
+tests/test_auth_redis_wiring.py::test_check_registration_limit_falls_back_to_memory
+  /home/parrot/blom/backend/routes/auth.py:117: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_auth_api.py::test_register_creates_user
+tests/test_auth_api.py::test_register_rate_limit
+tests/test_auth_api.py::test_register_rate_limit
+tests/test_auth_api.py::test_register_rate_limit
+tests/test_auth_api.py::test_register_500_on_unexpected_error
+  /home/parrot/blom/backend/routes/auth_api.py:46: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "created_at": datetime.utcnow().isoformat(),
+
+tests/test_auth_api.py::test_register_creates_user
+tests/test_auth_api.py::test_register_rate_limit
+tests/test_auth_api.py::test_register_rate_limit
+tests/test_auth_api.py::test_register_rate_limit
+tests/test_auth_redis_wiring.py::test_check_registration_limit_falls_back_to_memory
+tests/test_auth_redis_wiring.py::test_check_registration_limit_falls_back_to_memory
+tests/test_auth_redis_wiring.py::test_check_registration_limit_falls_back_to_memory
+  /home/parrot/blom/backend/routes/auth.py:126: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    registration_log.setdefault(ip, []).append(datetime.utcnow())
+
+tests/test_auth_api.py::test_login_success_sets_session
+  /home/parrot/blom/backend/routes/auth_api.py:104: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "last_login": datetime.utcnow().isoformat(),
+
+tests/test_auth_api.py::test_login_ip_locked_out_returns_423
+  /home/parrot/blom/backend/routes/auth.py:53: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    locked_ips[ip] = datetime.utcnow() + timedelta(minutes=LOCKOUT_MINUTES)
+
+tests/test_auth_api.py::test_login_ip_locked_out_returns_423
+  /home/parrot/blom/backend/routes/auth_api.py:77: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    if datetime.utcnow() < auth.locked_ips[ip]:
+
+tests/test_auth_api.py::test_login_ip_locked_out_returns_423
+  /home/parrot/blom/backend/routes/auth_api.py:78: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    remaining = int((auth.locked_ips[ip] - datetime.utcnow()).total_seconds() / 60) + 1
+
+tests/test_execution_engine.py::test_execute_action_completed_social
+tests/test_execution_engine.py::test_execute_action_unrouted_type_marks_failed
+  /home/parrot/blom/backend/services/execution_engine.py:56: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow().isoformat()
+
+tests/test_task_pipeline.py::test_happy_path_persists_opportunities_and_completes_run
+tests/test_task_pipeline.py::test_observation_groq_failure_marks_run_failed
+tests/test_task_pipeline.py::test_opportunity_groq_failure_marks_run_failed
+tests/test_task_pipeline.py::test_invalid_opportunity_data_marks_run_failed
+tests/test_task_pipeline.py::test_empty_opportunities_completes_run_with_no_docs
+  /home/parrot/blom/backend/task.py:76: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow().isoformat(),
+
+tests/test_task_pipeline.py::test_happy_path_persists_opportunities_and_completes_run
+tests/test_task_pipeline.py::test_observation_groq_failure_marks_run_failed
+tests/test_task_pipeline.py::test_opportunity_groq_failure_marks_run_failed
+tests/test_task_pipeline.py::test_invalid_opportunity_data_marks_run_failed
+tests/test_task_pipeline.py::test_empty_opportunities_completes_run_with_no_docs
+  /home/parrot/blom/backend/task.py:93: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "created_at": datetime.utcnow().isoformat(),
+
+tests/test_task_pipeline.py::test_happy_path_persists_opportunities_and_completes_run
+tests/test_task_pipeline.py::test_observation_groq_failure_marks_run_failed
+tests/test_task_pipeline.py::test_opportunity_groq_failure_marks_run_failed
+tests/test_task_pipeline.py::test_invalid_opportunity_data_marks_run_failed
+tests/test_task_pipeline.py::test_empty_opportunities_completes_run_with_no_docs
+  /home/parrot/blom/backend/task.py:225: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "completed_at": datetime.utcnow().isoformat(),
+
+tests/test_task_pipeline.py::test_happy_path_persists_opportunities_and_completes_run
+tests/test_task_pipeline.py::test_observation_groq_failure_marks_run_failed
+tests/test_task_pipeline.py::test_opportunity_groq_failure_marks_run_failed
+tests/test_task_pipeline.py::test_invalid_opportunity_data_marks_run_failed
+tests/test_task_pipeline.py::test_empty_opportunities_completes_run_with_no_docs
+  /home/parrot/blom/backend/task.py:243: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "completed_at": datetime.utcnow().isoformat(),
+
+tests/test_user_routes.py::test_analyze_returns_503_and_fails_run_when_broker_down
+  /home/parrot/blom/backend/routes/user.py:340: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "created_at": datetime.utcnow().isoformat(),
+
+tests/test_user_routes.py::test_analyze_returns_503_and_fails_run_when_broker_down
+  /home/parrot/blom/backend/routes/user.py:354: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "failed_at": datetime.utcnow().isoformat(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_connectors.py::test_get_connector_unrouted_action_type_raises[website]
+FAILED tests/test_connectors.py::test_get_connector_unrouted_action_type_raises[content]
+FAILED tests/test_connectors.py::test_get_connector_unrouted_action_type_raises[seo]
+FAILED tests/test_connectors.py::test_get_connector_unrouted_action_type_raises[email]
+FAILED tests/test_connectors.py::test_get_connector_unrouted_action_type_raises[research]
+FAILED tests/test_connectors.py::test_get_connector_unrouted_action_type_raises[other]
+FAILED tests/test_connectors.py::test_get_connector_missing_or_blank_action_type_raises[action0]
+FAILED tests/test_connectors.py::test_get_connector_missing_or_blank_action_type_raises[action1]
+FAILED tests/test_connectors.py::test_get_connector_missing_or_blank_action_type_raises[action2]
+FAILED tests/test_connectors.py::test_instagram_connector_accepts_social_action
+FAILED tests/test_connectors.py::test_instagram_connector_rejects_non_social_action
+FAILED tests/test_execution_engine.py::test_execute_action_completed_social
+FAILED tests/test_execution_engine.py::test_execute_action_unrouted_type_marks_failed
+FAILED tests/test_opportunity_generator.py::test_valid_array_returns_validated_opportunities
+FAILED tests/test_opportunity_generator.py::test_model_reads_groq_model_env
+FAILED tests/test_opportunity_generator.py::test_empty_response_raises - Type...
+FAILED tests/test_opportunity_generator.py::test_invalid_json_raises - TypeEr...
+FAILED tests/test_opportunity_generator.py::test_non_array_raises - TypeError...
+FAILED tests/test_opportunity_generator.py::test_schema_violation_raises - Ty...
+FAILED tests/test_opportunity_validation.py::test_valid_full_list_passes - Va...
+FAILED tests/test_opportunity_validation.py::test_missing_key_raises[problem_key]
+FAILED tests/test_opportunity_validation.py::test_missing_key_raises[description]
+FAILED tests/test_opportunity_validation.py::test_missing_key_raises[title]
+FAILED tests/test_opportunity_validation.py::test_missing_key_raises[evidence]
+FAILED tests/test_opportunity_validation.py::test_string_fields_reject_bad_values[-title]
+FAILED tests/test_opportunity_validation.py::test_string_fields_reject_bad_values[-description]
+FAILED tests/test_opportunity_validation.py::test_string_fields_reject_bad_values[-problem]
+FAILED tests/test_opportunity_validation.py::test_string_fields_reject_bad_values[   -title]
+FAILED tests/test_opportunity_validation.py::test_string_fields_reject_bad_values[   -description]
+FAILED tests/test_opportunity_validation.py::test_string_fields_reject_bad_values[   -problem]
+FAILED tests/test_opportunity_validation.py::test_string_fields_reject_bad_values[42-title]
+FAILED tests/test_opportunity_validation.py::test_string_fields_reject_bad_values[42-description]
+FAILED tests/test_opportunity_validation.py::test_string_fields_reject_bad_values[42-problem]
+FAILED tests/test_opportunity_validation.py::test_string_fields_reject_bad_values[None-title]
+FAILED tests/test_opportunity_validation.py::test_string_fields_reject_bad_values[None-description]
+FAILED tests/test_opportunity_validation.py::test_string_fields_reject_bad_values[None-problem]
+FAILED tests/test_opportunity_validation.py::test_evidence_rejects_bad_values[bad0]
+FAILED tests/test_opportunity_validation.py::test_evidence_rejects_bad_values[bad1]
+FAILED tests/test_opportunity_validation.py::test_evidence_rejects_bad_values[bad2]
+FAILED tests/test_opportunity_validation.py::test_evidence_rejects_bad_values[nope]
+FAILED tests/test_opportunity_validation.py::test_bad_potential_impact_raises
+FAILED tests/test_opportunity_validation.py::test_unhashable_potential_impact_raises[bad0]
+FAILED tests/test_opportunity_validation.py::test_unhashable_potential_impact_raises[bad1]
+FAILED tests/test_opportunity_validation.py::test_unhashable_potential_impact_raises[bad2]
+FAILED tests/test_opportunity_validation.py::test_bad_type_raises - Assertion...
+FAILED tests/test_opportunity_validation.py::test_unhashable_type_raises[bad0]
+FAILED tests/test_opportunity_validation.py::test_unhashable_type_raises[bad1]
+FAILED tests/test_opportunity_validation.py::test_unhashable_type_raises[bad2]
+FAILED tests/test_opportunity_validation.py::test_confidence_must_be_number[0.5]
+FAILED tests/test_opportunity_validation.py::test_confidence_must_be_number[True]
+FAILED tests/test_opportunity_validation.py::test_confidence_must_be_number[None]
+FAILED tests/test_opportunity_validation.py::test_confidence_out_of_range_raises[1.2]
+FAILED tests/test_opportunity_validation.py::test_confidence_out_of_range_raises[-0.1]
+FAILED tests/test_opportunity_validation.py::test_confidence_out_of_range_raises[2]
+FAILED tests/test_opportunity_validation.py::test_out_of_order_raises - Asser...
+FAILED tests/test_opportunity_validation.py::test_ties_are_permitted - ValueE...
+FAILED tests/test_opportunity_validation.py::test_extra_keys_tolerated - Valu...
+FAILED tests/test_task_pipeline.py::test_happy_path_persists_opportunities_and_completes_run
+FAILED tests/test_task_pipeline.py::test_observation_groq_failure_marks_run_failed
+FAILED tests/test_task_pipeline.py::test_opportunity_groq_failure_marks_run_failed
+FAILED tests/test_task_pipeline.py::test_invalid_opportunity_data_marks_run_failed
+FAILED tests/test_task_pipeline.py::test_empty_opportunities_completes_run_with_no_docs
+62 failed, 60 passed, 49 warnings in 57.81s
